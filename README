@@ -1,3 +1,6 @@
 The source files for IUG boite à outils.
 
-We'll see how this works out.
+Use, change and either commit or emil your changes.
+
+I'm currently thinkng about splitting gr_shapes.ad* into several different files
+so that all functions will be easier to find. gr_shapes.adb is currently somewhat monstrous look at.

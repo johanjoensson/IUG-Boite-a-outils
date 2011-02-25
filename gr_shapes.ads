@@ -36,6 +36,23 @@ package Gr_Shapes is
    --   with the pixel value <pixelValue>.
    -- If <clipRect> is NULL, then clip against the entire image.
    --
+
+
+   type Side;
+   type SidePtr is access all Side;
+
+   type Side is record
+      Ymax, X_Ymin    : Integer;
+      M_Inv           : Float;
+      Next            : SidePtr;
+   end record;
+
+
+   procedure DrawLine
+     (anImage                 : ImagePtr;
+                          xMin, yMin, xMax, yMax  : Integer;
+                          color                   : Pixel);
+
    procedure Polyline
      (image      : ImagePtr;
       points     : PointPtr;
@@ -48,10 +65,28 @@ package Gr_Shapes is
    --   with the pixel value <pixelValue>
    -- If <clipRect> is NULL, then clip against the entire image.
    --
+
+   procedure Insert_Side(P1, P2: PointPtr; Sides: in out SidePtr);
+
    procedure Polygone
      (image      : ImagePtr;
       points     : PointPtr;
       pixelValue : Pixel;
       clipRect   : RectanglePtr     := NULL);
 
+   procedure DryDrawPoint (XMin, YMin, XMax, YMax  :in out Integer);
+
+  
+   function Check (X,Y,XLMin,YLMin,XLMax,YLMax: Integer) return Boolean;
+
+
+   procedure ClipLine (anImage      : ImagePtr;
+                       XMin,YMin,XMax,YMax : Integer ;
+                       color : Pixel;
+                       XLMin,YLMin,XLMax,YLMax : Integer);
+
+
+
 end Gr_Shapes;
+
+

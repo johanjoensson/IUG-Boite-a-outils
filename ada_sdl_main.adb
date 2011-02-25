@@ -48,7 +48,11 @@ package body Ada_SDL_Main is
     nbMice          : Integer;                                -- Number of mice connected to the computer
     mouseRec        : MousePtr;                               -- Retrieves mouse information when using multiple mice
 
-    myImage         : Image;                                  -- An image structure used to call the Ex_DrawLine primitive
+    myImage         : Image;	-- An image structure used to call the Ex_DrawLine primitive
+
+    myImagePtr	    : ImagePtr;
+
+    p1, p2, p3, p4  : PointPtr;
 
 
   begin
@@ -124,7 +128,18 @@ package body Ada_SDL_Main is
     myImage.width     := width;
     myImage.height    := height;
 
-    Ex_DrawLine (myImage, 30, 30, 60, 40, blue);
+myImagePtr  	:=  new Image'(myImage);
+
+    DrawLine (myImagePtr, 30, 30, 30, 90, blue);
+    
+p4  	:=  new point'(30,30,Null);
+p3	:=  new point'(30,90,p4);
+p2	:=  new	point'(90,30,p3);
+p1	:=  new point'(90,90,p2);
+    polygone(myImagePtr, p1, blue);
+
+
+
 
     -- Release exclusive access to the window's pixel memory, tell the system to
     --  update the entire window on the screen.
