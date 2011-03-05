@@ -1,7 +1,7 @@
 with
-  Ada_SDL_Video;
+  Ada_SDL_Video, Aux;
 use
-  Ada_SDL_Video;
+  Ada_SDL_Video, Aux;
 
 package Gr_Shapes is
 
@@ -15,20 +15,13 @@ package Gr_Shapes is
    type ImagePtr is access all Image;
 
    -- Point data type
-   type Point;
-   type PointPtr is access all Point;
+--   type Point;
+--   type PointPtr is access all Point;
 
-   type Point is record
-      x, y          : Integer;
-      next          : PointPtr;
-   end record;
-
-   -- Rectangle data type
-   type Rectangle is record
-      topLeft, bottomRight : Point;
-   end record;
-
-   type RectanglePtr is access all Rectangle;
+--   type Point is record
+--      x, y          : Integer;
+--      next          : PointPtr;
+--   end record;
 
    --
    -- Draw in the image <image> clipped by the rectangle <clipRect>
@@ -38,14 +31,15 @@ package Gr_Shapes is
    --
 
 
-   type Side;
-   type SidePtr is access all Side;
+   -- Side data type for polygons
+--   type Side;
+--   type SidePtr is access all Side;
 
-   type Side is record
-      Ymax, X_Ymin    : Integer;
-      M_Inv           : Float;
-      Next            : SidePtr;
-   end record;
+--  type Side is record
+--      Ymax, X_Ymin    : Integer;
+--      Dx, Dy          : Integer;
+--      Next            : SidePtr;
+--   end record;
 
 
    procedure DrawLine
@@ -66,7 +60,6 @@ package Gr_Shapes is
    -- If <clipRect> is NULL, then clip against the entire image.
    --
 
-   procedure Insert_Side(P1, P2: PointPtr; Sides: in out SidePtr);
 
    procedure Polygone
      (image      : ImagePtr;

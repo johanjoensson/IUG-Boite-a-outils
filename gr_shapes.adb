@@ -1,26 +1,7 @@
-with  Ada_SDL_Video, Interfaces.C, Ada.Text_IO, Ada.Integer_Text_IO;
-use   Ada_SDL_Video, Interfaces.C, Ada_SDL_Video.PixelPtrPkg, Ada.Text_IO,Ada.Integer_Text_IO;
+with  Ada_SDL_Video, Interfaces.C, Ada.Text_IO, Ada.Integer_Text_IO, Aux;
+use   Ada_SDL_Video, Interfaces.C, Ada_SDL_Video.PixelPtrPkg, Ada.Text_IO,Ada.Integer_Text_IO, Aux;
 
 package body Gr_Shapes is
-
-   function Min(A,B : Integer) return Integer is
-   begin
-      if A <= B then
-         return A ;
-      else
-         return B ;
-      end if ;
-   end ;
-
-
-   function Max(A,B : Integer) return Integer is
-   begin
-      if A <= B then
-         return B ;
-      else
-         return A ;
-      end if ;
-   end ;
 
 procedure DrawLine (anImage                 : ImagePtr;
                        xMin, yMin, xMax, yMax  : Integer;
@@ -303,150 +284,57 @@ procedure DrawLine (anImage                 : ImagePtr;
      -- end loop ;
    end Polyline;
 
-   procedure Ymax_min (P: in PointPtr; Min, Max : out Integer) is
-      --Return the maximal and minimal value of Y found amongst the points
-      Tmp : PointPtr := P.next ;
-   begin
-      Min := P.Y ;
-      Max := P.Y ;
-      while Tmp /= null loop
-         if Tmp.Y < Min then
-            Min := Tmp.Y ;
-         elsif P.Y > Max then
-            Max := Tmp.Y ;
-         end if ;
-         Tmp := Tmp.Next ;
-      end loop ;
-   end;
-
-
-
-   procedure Insert_Side(P1, P2: PointPtr; Sides: in out SidePtr) is
-      --Insert the sides of the polygone in the list of sides
-      --P1 and P2 are the endpoints of the side to be inserted
-      Cour:Sideptr := Sides;	    -- Pointer to a side currently in the list
-      Prec: SidePtr;		    -- Pointer to the side before Cour
-      Tmp: SidePtr;		    -- Temporary pointer to the side that is to be inserted in te list
-
-      Inserted: Boolean := False;   -- Boolean to check whether the side has been inserted or not
-
-   begin
-      while Cour /= null and then not inserted loop
-         --Sides are inserted in order of increasing x values
-         Put_Line("A tour of the loop");
-         if Min(P1.X, P2.X) < Cour.X_Ymin then
-            --the side is to be inserted in the middle or the beginning of the list
-            Tmp := new Side;
-	    -- Calculate the value of Ymax
-            Tmp.Ymax := Max(P1.Y, P2.Y);
-	    -- Determine the value of X(Ymin)
-            if Tmp.Ymax = P1.Y then
-               Tmp.X_Ymin := P1.Y;
-            else
-               Tmp.X_Ymin := P2.Y;
-            end if;
-	    -- Insert Tmp correctly
-            Tmp.Next := Cour;
-            if Prec /= null then
-	    -- Tmp will be inserted in the middle of an existing list
-               Prec.next := Tmp;
-               Put_Line("Side inserted in the middle of the list") ;
-            else
-	    -- Tmp will be inserted in the beginning of a list
-               Sides := Tmp;
-               Put_Line("Side inserted first in the list") ;
-            end if;
-	    -- We have inserted a side!
-            Inserted := True;
-         end if;
-	 -- Continue on inside the loop
-         Prec := Cour;
-         Cour := Cour.next;
-      end loop;
-
-      --if cour is Null then inserted = false
-      if not Inserted then
-      -- no side has been inserted
-      -- the side will be inserted at the end of the list or as the first element of the list      
-         Tmp := new Side;
-	 -- Calculate all values to be inserted
-         Tmp.Ymax := Max(P1.Y, P2.Y);
-         if Tmp.Ymax = P1.Y then
-            Tmp.X_Ymin := P1.Y;
-         else
-            Tmp.X_Ymin := P2.Y;
-         end if;
-         if Sides = null then
-            --Side is to be inserted first in the list
-	    --because there are no sides currently in the list
-            Sides := Tmp;
-	    Tmp.Next := Null;
-            Put_Line("Side inserted as the first side in the list");
-         else
-            --the side is to be inserted in the end of the list
-            Tmp.Next := Null;
-            Prec.next := Tmp;
-            Put_Line("Side inserted last in list");
-         end if;
-      end if;
-
-   end Insert_Side;
-
-
-
-   
    procedure Polygone (image      : ImagePtr;
                        points     : PointPtr;
                        pixelValue : Pixel;
                        clipRect   : RectanglePtr      := NULL) is
-      Point1: PointPtr := Points ;	-- The first point, the starting point of the polygone
-      PCurrent: PointPtr := Points ;	-- The Point that is currently used for drawing a line.
-      Ymin, Ymax : Integer ;		-- Max and Min values of y, used to determine maximal heigth of the polygone
-      I : Integer := 0;			-- Integer used to track which line a point is on
-      Final_Y : Integer := 0;		-- Variable showng on what line the last Side begins
+   
+      Point1        : PointPtr  := Points ;	-- The first point, the starting point of the polygone
+      PCurrent      : PointPtr  := Points ;	-- The Point that is currently used for drawing a line.
+      Ymin, Ymax    : Integer ;		        -- Max and Min values of y, used to determine maximal heigth of the polygone
+      I             : Integer   := 0;		-- Integer used to track which line a point is on
+      Final_Y       : Integer   := 0;		-- Variable showng on what line the last Side begins
+	  TSides		: array (0..image.height) of SidePtr;
+      TSidesActive  : SidePtr   := null ;   -- Pointer towards the "active sides" of the polygone
+
+      color         : Pixel     := pixelValue;
 
    begin
-
-   -- Calculate the highest and lowest values of y.
+      -- Calculate the highest and lowest values of y.
       Ymax_Min(Points, Ymin, Ymax);
-      -- Begin drawing on the first line
-      I := Ymin;
-      put(Ymax); New_line;
-      -- Declaration of an array containing pointers to all the sides in the polygon
-      declare
-      -- TSides contains all sides of the polygon,  indexes show on what line the side begins.
-         TSides : array (Ymin..Ymax + 1) of SidePtr ;
-      begin
       -- Insert all sides in TSides, the chain TSides(n) is sorted after x
          while PCurrent.next /= null loop
-	 -- If I is not on the line where the side begins, increase I until it is.
-	 -- If I should pass below the polygone then restart from Ymin.
-            while Min(Pcurrent.y, Pcurrent.Next.Y) /=I loop
-               I := I +1 ;
-               if I > Ymax then
-                  I:=Ymin;
-               end if;
-
-            end loop;
-	    -- Insert the side in TSides and draw the lines of the polygone.
-	    -- Sides are inserted in their proper place so that the chain is always sorted
-               Put_Line("Insert side");
-               Put("Insert on line "); Put(I); New_Line ;
-               Insert_Side(Pcurrent, Pcurrent.Next, Tsides(I));
+               -- Insert the side in TSides and draw the lines of the polygone.
+	           -- Sides are inserted in their proper place so that the chain is always sorted
+               Insert_Side(Pcurrent, Pcurrent.Next, Tsides(Min(Pcurrent.y, Pcurrent.next.y)));
                DrawLine(Image, PCurrent.X, PCurrent.Y, PCurrent.Next.X, PCurrent.Next.Y, PixelValue);
                PCurrent := PCurrent.next;
          end loop ;
-	 -- Calculate where the last side begins
+
+         -- Calculate where the last side begins
          Final_Y := Min(PCurrent.Y, Point1.Y);
-         Put_Line("Insert side");
-         Put("Insert on line "); Put(Final_Y); New_Line ;
-	 -- Insert the last side and complete the polygone
+
+         -- Insert the last side and complete the polygone
          Insert_Side(PCurrent, Point1, Tsides(Final_Y));
-         DrawLine(Image, PCurrent.X, PCurrent.Y, Point1.X, Point1.Y, PixelValue) ;
-      end;
+         --DrawLine(Image, PCurrent.X, PCurrent.Y, Point1.X, Point1.Y, PixelValue) ;
 
-      --Fill the polygone!
-
+         --Fill the polygone!
+         declare
+            cour    :   SidePtr;
+         begin
+         for l in Ymin .. Ymax loop
+             Insert_Side(Tsides(l), TSidesActive);
+             cour := TSidesActive;
+			 Update_Sides(TSidesActive, l);
+             while cour /= null and then cour.next /= null loop
+                 drawline(Image, Cour.X_Ymin, l, Cour.next.X_Ymin, l , pixelValue);
+                 --Put_Line("Line drawn");
+				 Put("X1 :"); Put(Cour.X_Ymin);
+				 Put(" X2 :"); Put(Cour.next.X_Ymin); New_line;
+                 cour := cour.next.next;
+             end loop;
+         end loop;
+         end; 
    end Polygone;
 
 end Gr_Shapes;

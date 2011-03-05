@@ -8,13 +8,15 @@ with
   Ada.Text_IO, Interfaces.C,
   Ada_SDL_Init, Ada_SDL_Video, Ada_SDL_Event, Ada_SDL_Mouse, Ada_SDL_Keyboard,
   Ada_ManyMouse,
-  Gr_Shapes, Example_Package;
+  Gr_Shapes, Example_Package,
+  Aux;
 
 use
   Ada.Text_IO, Interfaces.C,
   Ada_SDL_Init, Ada_SDL_Video, Ada_SDL_Event, Ada_SDL_Mouse, Ada_SDL_Keyboard,
   Ada_ManyMouse,
-  Gr_Shapes, Example_Package;
+  Gr_Shapes, Example_Package,
+  Aux;
 
 use
   Ada_SDL_Video.PixelPtrPkg;
@@ -128,15 +130,21 @@ package body Ada_SDL_Main is
     myImage.width     := width;
     myImage.height    := height;
 
-myImagePtr  	:=  new Image'(myImage);
+    myImagePtr  	:=  new Image'(myImage);
 
-    DrawLine (myImagePtr, 30, 30, 30, 90, blue);
+    --DrawLine (myImagePtr, 30, 30, 30, 90, blue);
     
-p4  	:=  new point'(30,30,Null);
-p3	:=  new point'(30,90,p4);
-p2	:=  new	point'(90,30,p3);
-p1	:=  new point'(90,90,p2);
+    p4  :=  new point'(90,90,Null);
+    p3	:=  new point'(90,30,p4);
+    p2	:=  new	point'(30,90,p3);
+    p1	:=  new point'(30,30,p2);
     polygone(myImagePtr, p1, blue);
+
+    --p1.next := p2;
+    --p2.next := p4;
+    --p4.next := p3;
+    --p3.next := null;
+    --polygone(myImagePtr, p1, blue);
 
 
 
