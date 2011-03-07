@@ -1,6 +1,4 @@
-The source files for IUG boite à outils.
+These are the source files for all student made procedures, if you can't use them you probably shouldn't have downloaded them.
 
-Use, change and either commit or emil your changes.
+No instructions will follow.
 
-I'm currently thinkng about splitting gr_shapes.ad* into several different files
-so that all functions will be easier to find. gr_shapes.adb is currently somewhat monstrous look at.

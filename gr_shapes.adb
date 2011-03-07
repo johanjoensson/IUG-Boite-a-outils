@@ -307,7 +307,6 @@ procedure DrawLine (anImage                 : ImagePtr;
                -- Insert the side in TSides and draw the lines of the polygone.
 	           -- Sides are inserted in their proper place so that the chain is always sorted
                Insert_Side(Pcurrent, Pcurrent.Next, Tsides(Min(Pcurrent.y, Pcurrent.next.y)));
-               DrawLine(Image, PCurrent.X, PCurrent.Y, PCurrent.Next.X, PCurrent.Next.Y, PixelValue);
                PCurrent := PCurrent.next;
          end loop ;
 
@@ -322,15 +321,19 @@ procedure DrawLine (anImage                 : ImagePtr;
          declare
             cour    :   SidePtr;
          begin
+--			 Insert_Side(Tsides(Ymin), TSidesActive);
+--			 cour := TSidesActive;
+--			 while cour /= null and then cour.next /= null loop
+--                drawline(Image, Cour.X_Ymin, Ymin, Cour.next.X_Ymin, Ymin , pixelValue);
+--                cour := cour.next.next;
+--             end loop;
+
          for l in Ymin .. Ymax loop
              Insert_Side(Tsides(l), TSidesActive);
-             cour := TSidesActive;
 			 Update_Sides(TSidesActive, l);
+             cour := TSidesActive;
              while cour /= null and then cour.next /= null loop
                  drawline(Image, Cour.X_Ymin, l, Cour.next.X_Ymin, l , pixelValue);
-                 --Put_Line("Line drawn");
-				 Put("X1 :"); Put(Cour.X_Ymin);
-				 Put(" X2 :"); Put(Cour.next.X_Ymin); New_line;
                  cour := cour.next.next;
              end loop;
          end loop;

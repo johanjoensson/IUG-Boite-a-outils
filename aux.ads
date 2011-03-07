@@ -31,6 +31,8 @@ Package Aux is
 
    procedure Ymax_min (P: in PointPtr; Min, Max : out Integer);
    
+   function XYMin(point1, point2: PointPtr) return integer;
+   
    procedure Insert_Side(P1, P2: PointPtr; Sides: in out SidePtr);
 
    procedure Insert_Side(Sides  : in SidePtr; Table : in out SidePtr);
