@@ -1,9 +1,9 @@
-with Ada.Unchecked_Deallocation, Ada.Text_Io, Ada.Integer_Text_Io;
-use Ada.Text_Io, Ada.Integer_Text_Io;
+with Ada.Unchecked_Deallocation;
 
 package body Aux is
 
- procedure free is new Ada.Unchecked_Deallocation (Side,SidePtr);
+	-- Procedure used to manage memory consumption
+	procedure free is new Ada.Unchecked_Deallocation (Side,SidePtr);
 
    function Min(A,B : Integer) return Integer is
    begin
@@ -42,6 +42,7 @@ package body Aux is
    end;
 
    function XYMin(point1, point2: PointPtr) return integer is
+	   -- Return X(Ymin), if Ymin=Ymax return Xmin
 	   res : integer;
    begin
 	   if point1.Y < point2.Y then
@@ -55,8 +56,9 @@ package body Aux is
    end XYmin;
 
    procedure Insert_Side(P1, P2: PointPtr; Sides: in out SidePtr) is
-      --Insert the sides of the polygone in the list of sides
-      --P1 and P2 are the endpoints of the side to be inserted
+ 	   -- Insert the sides of the polygone in the list of sides
+	   -- P1 and P2 are the endpoints of the side to be inserted
+	   -- Sort according to X_Ymin
       Cour	: Sideptr	:= Sides;	    -- Pointer to a side currently in the list
       Prec	: SidePtr	;			    -- Pointer to the side before Cour
       Tmp	: SidePtr	;			    -- Temporary pointer to the side that is to be inserted in te list
@@ -96,18 +98,21 @@ package body Aux is
    end Insert_Side;
 
 
-	   -- Insert sides into a table of sides
+	   -- Insert sides into a table of sides, sort according to X_Ymin
    procedure Insert_Side(Sides  : in SidePtr; Table : in out SidePtr) is
-    current_side,next_side              : SidePtr   := Sides;
-    current_table, former_table         : SidePtr;  
-    inserted                            : Boolean   := False;
+    current_side,next_side              : SidePtr   := Sides;		-- Pointers to the sides to be inserted
+    current_table, former_table         : SidePtr;					-- Pointers to the sides already in the table
+    inserted                            : Boolean   := False;		-- Boolean to see whether or not we've inserted a value already
    begin
+	   -- Loop through and insert all the sides to be inserted
 	   while current_side /= null loop
+		   -- Initialize variables for insertion
 		   inserted := false;
 		   next_side := current_side.next;
 		   current_side.next := null;
 		   former_table := null;
 		   current_table := table;
+		   -- Loop through the table of sides already inserted and insert the current side
 		   while current_table /= null and not inserted loop
 			   if current_side.X_Ymin < current_table.X_Ymin then
 				   if former_table = null then
@@ -115,6 +120,7 @@ package body Aux is
 					   current_side.next := Table;
 					   Table := current_side;
 				   else
+					   -- Insert side in the middle of the chain
 					   former_table.next := current_side;
 					   current_side.next := current_table;
 					   current_table := current_side;
@@ -149,6 +155,7 @@ package body Aux is
 	   while curr /= null loop
 		   next := curr.next;
 
+		   -- Update the values
 		   if curr.Dy /= 0 then
 			   curr.X_Ymin := curr.X_Ymin + curr.Dx/curr.Dy;
 		   end if;

@@ -292,12 +292,15 @@ procedure DrawLine (anImage                 : ImagePtr;
       Point1        : PointPtr  := Points ;	-- The first point, the starting point of the polygone
       PCurrent      : PointPtr  := Points ;	-- The Point that is currently used for drawing a line.
       Ymin, Ymax    : Integer ;		        -- Max and Min values of y, used to determine maximal heigth of the polygone
-      I             : Integer   := 0;		-- Integer used to track which line a point is on
-      Final_Y       : Integer   := 0;		-- Variable showng on what line the last Side begins
-	  TSides		: array (0..image.height) of SidePtr;
+      I             : Integer   := 0 ;		-- Integer used to track which line a point is on
+      Final_Y       : Integer   := 0 ;		-- Variable showng on what line the last Side begins
+	  TSides		: array (0..image.height) of SidePtr ;	-- The list of all sides in the polygone
       TSidesActive  : SidePtr   := null ;   -- Pointer towards the "active sides" of the polygone
 
-      color         : Pixel     := pixelValue;
+      color         : Pixel     := pixelValue ;	-- Color of the polygone
+	  pPtr			: PixelPtr ;			-- Pointer to the current pixel to paint
+	  cour    :   SidePtr ;					-- Pointer to the current side treated
+
 
    begin
       -- Calculate the highest and lowest values of y.
@@ -312,32 +315,26 @@ procedure DrawLine (anImage                 : ImagePtr;
 
          -- Calculate where the last side begins
          Final_Y := Min(PCurrent.Y, Point1.Y);
-
          -- Insert the last side and complete the polygone
          Insert_Side(PCurrent, Point1, Tsides(Final_Y));
-         --DrawLine(Image, PCurrent.X, PCurrent.Y, Point1.X, Point1.Y, PixelValue) ;
 
          --Fill the polygone!
-         declare
-            cour    :   SidePtr;
-         begin
---			 Insert_Side(Tsides(Ymin), TSidesActive);
---			 cour := TSidesActive;
---			 while cour /= null and then cour.next /= null loop
---                drawline(Image, Cour.X_Ymin, Ymin, Cour.next.X_Ymin, Ymin , pixelValue);
---                cour := cour.next.next;
---             end loop;
-
-         for l in Ymin .. Ymax loop
-             Insert_Side(Tsides(l), TSidesActive);
-			 Update_Sides(TSidesActive, l);
+         for y in Ymin .. Ymax loop
+			 -- Insert sides into TSidesActive, update the sides in TSidesActive, sort them and remove if necessary
+             Insert_Side(Tsides(y), TSidesActive);
+			 Update_Sides(TSidesActive, y);
              cour := TSidesActive;
-             while cour /= null and then cour.next /= null loop
-                 drawline(Image, Cour.X_Ymin, l, Cour.next.X_Ymin, l , pixelValue);
+			 -- Fill in all intervals
+             while cour /= null loop
+				 -- Fill in the current interval
+				 for x in cour.X_Ymin .. Cour.next.X_Ymin loop
+					 pPtr:= Image.basePixel + ptrdiff_t (Image.width * y + x);
+					 pPtr.all := color;
+				 end loop;
+				 -- Move on to the next interval
                  cour := cour.next.next;
              end loop;
          end loop;
-         end; 
    end Polygone;
 
 end Gr_Shapes;
