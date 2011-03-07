@@ -41,6 +41,23 @@ package body Aux is
       end loop ;
    end;
 
+   procedure Xmax_min (P: in PointPtr; Min, Max : out Integer) is
+      --Return the maximal and minimal value of Y found amongst the points
+      Tmp : PointPtr := P.next ;
+   begin
+      Min := P.X ;
+      Max := P.X ;
+      while Tmp /= null loop
+         if Tmp.X < Min then
+            Min := Tmp.X ;
+         elsif Tmp.X > Max then
+            Max := Tmp.X ;
+         end if ;
+         Tmp := Tmp.Next ;
+      end loop ;
+   end;
+
+
    function XYMin(point1, point2: PointPtr) return integer is
 	   -- Return X(Ymin), if Ymin=Ymax return Xmin
 	   res : integer;

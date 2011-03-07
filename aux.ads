@@ -30,6 +30,8 @@ Package Aux is
    function Max(A,B : Integer) return Integer;
 
    procedure Ymax_min (P: in PointPtr; Min, Max : out Integer);
+
+   procedure Xmax_min (P: in PointPtr; Min, Max : out Integer);
    
    function XYMin(point1, point2: PointPtr) return integer;
    

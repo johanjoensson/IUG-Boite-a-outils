@@ -54,6 +54,11 @@ package body Ada_SDL_Main is
 
     myImagePtr	    : ImagePtr;
 
+	myClipRect		: RectanglePtr;
+
+	topLeftClip, bottomRightClip		: Point;
+	
+
     p1, p2, p3, p4, p5, p6, p7, p8, p9, p10  : PointPtr;
 
 
@@ -132,6 +137,11 @@ package body Ada_SDL_Main is
 
     myImagePtr  	:=  new Image'(myImage);
 
+	topLeftClip		:=	(45,60,null);
+	bottomRightClip	:=	(150,150,null);
+
+	myClipRect		:=	new Rectangle'(topLeftClip, bottomRightClip);
+
     --DrawLine (myImagePtr, 30, 30, 30, 90, blue);
 	p10	:=	new point'(240,120,null);
 	p9	:=	new point'(240,60,p10);
@@ -143,7 +153,7 @@ package body Ada_SDL_Main is
     p3	:=  new point'(120,30,p4);
     p2	:=  new	point'(90,30,p3);
     p1	:=  new point'(90,90,p2);
-    polygone(myImagePtr, p1, blue);
+    polygone(myImagePtr, p1, blue, myClipRect);
 	--polygone(myImagePtr, p5, blue);
 
     --p1.next := p2;

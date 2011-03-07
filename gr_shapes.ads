@@ -65,7 +65,7 @@ package Gr_Shapes is
      (image      : ImagePtr;
       points     : PointPtr;
       pixelValue : Pixel;
-      clipRect   : RectanglePtr     := NULL);
+	  clipRect   : RectanglePtr := null);
 
    procedure DryDrawPoint (XMin, YMin, XMax, YMax  :in out Integer);
 

@@ -287,24 +287,27 @@ procedure DrawLine (anImage                 : ImagePtr;
    procedure Polygone (image      : ImagePtr;
                        points     : PointPtr;
                        pixelValue : Pixel;
-                       clipRect   : RectanglePtr      := NULL) is
+					   clipRect   : RectanglePtr := null) is
    
       Point1        : PointPtr  := Points ;	-- The first point, the starting point of the polygone
       PCurrent      : PointPtr  := Points ;	-- The Point that is currently used for drawing a line.
       Ymin, Ymax    : Integer ;		        -- Max and Min values of y, used to determine maximal heigth of the polygone
-      I             : Integer   := 0 ;		-- Integer used to track which line a point is on
+	  Xmin,Xmax		: Integer ;
+	  I             : Integer   := 0 ;		-- Integer used to track which line a point is on
       Final_Y       : Integer   := 0 ;		-- Variable showng on what line the last Side begins
 	  TSides		: array (0..image.height) of SidePtr ;	-- The list of all sides in the polygone
       TSidesActive  : SidePtr   := null ;   -- Pointer towards the "active sides" of the polygone
 
       color         : Pixel     := pixelValue ;	-- Color of the polygone
 	  pPtr			: PixelPtr ;			-- Pointer to the current pixel to paint
-	  cour    :   SidePtr ;					-- Pointer to the current side treated
+	  cour			: SidePtr ;				-- Pointer to the current side treated
 
+	  XClipMin, XClipMax, YClipMin, YClipMax		: integer;
 
    begin
       -- Calculate the highest and lowest values of y.
       Ymax_Min(Points, Ymin, Ymax);
+	  Xmax_Min(Points, Xmin, Xmax);
       -- Insert all sides in TSides, the chain TSides(n) is sorted after x
          while PCurrent.next /= null loop
                -- Insert the side in TSides and draw the lines of the polygone.
@@ -318,18 +321,25 @@ procedure DrawLine (anImage                 : ImagePtr;
          -- Insert the last side and complete the polygone
          Insert_Side(PCurrent, Point1, Tsides(Final_Y));
 
+		 XClipMin := ClipRect.all.topLeft.X ;
+		 XClipMax := ClipRect.all.bottomRight.X ;
+		 YClipMin := ClipRect.all.topLeft.Y ;
+		 YClipMax := ClipRect.all.bottomRight.Y ;
+
          --Fill the polygone!
-         for y in Ymin .. Ymax loop
+         for y in Ymin ..Ymax loop
 			 -- Insert sides into TSidesActive, update the sides in TSidesActive, sort them and remove if necessary
              Insert_Side(Tsides(y), TSidesActive);
 			 Update_Sides(TSidesActive, y);
              cour := TSidesActive;
 			 -- Fill in all intervals
-             while cour /= null loop
+             while cour /= null and then cour.next /= null loop
 				 -- Fill in the current interval
 				 for x in cour.X_Ymin .. Cour.next.X_Ymin loop
 					 pPtr:= Image.basePixel + ptrdiff_t (Image.width * y + x);
-					 pPtr.all := color;
+					 if (ClipRect /= null) and then Check(x,y,ClipRect.TopLeft.X,ClipRect.TopLeft.Y,ClipRect.BottomRight.X,ClipRect.BottomRight.Y) then
+	   					 PPtr.all:= Color ;
+	  				 end if ;
 				 end loop;
 				 -- Move on to the next interval
                  cour := cour.next.next;
