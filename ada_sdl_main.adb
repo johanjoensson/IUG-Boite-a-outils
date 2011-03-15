@@ -148,12 +148,12 @@ package body Ada_SDL_Main is
 	p8	:=	new point'(210,30,p9);
 	p7	:=	new point'(180,60,p8);
 	p6	:=	new point'(180,90,null);
-	p5	:=	new point'(180,120,p6);
-	p4  :=  new point'(120,120,p5);
-    p3	:=  new point'(120,30,p4);
-    p2	:=  new	point'(90,30,p3);
-    p1	:=  new point'(90,90,p2);
-    polygone(myImagePtr, p1, blue, myClipRect);
+	p5	:=	new point'(120,170,null);
+	p4  :=  new point'(140,165,p5);
+    p3	:=  new point'(110,75,p4);
+    p2	:=  new	point'(120,150,p3);
+    p1	:=  new point'(92,90,p2);
+    polygone(myImagePtr, p1, blue, null);
 	--polygone(myImagePtr, p5, blue);
 
     --p1.next := p2;

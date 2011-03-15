@@ -1,5 +1,11 @@
 with Ada.Unchecked_Deallocation;
 
+--with Ada.Text_Io;
+--use Ada.Text_Io;
+
+--with Ada.Integer_Text_Io;
+--use  Ada.Integer_Text_Io;
+
 package body Aux is
 
 	-- Procedure used to manage memory consumption
@@ -79,11 +85,16 @@ package body Aux is
       Cour	: Sideptr	:= Sides;	    -- Pointer to a side currently in the list
       Prec	: SidePtr	;			    -- Pointer to the side before Cour
       Tmp	: SidePtr	;			    -- Temporary pointer to the side that is to be inserted in te list
+	  Dx	: Integer	;
+	  Dy	: Integer	;
 
       Inserted	: Boolean	:= False;   -- Boolean to check whether the side has been inserted or not
 
    begin
-	   tmp := new Side'(max(p1.Y,p2.Y),XYmin(p1,p2), (p2.X - p1.X), (p2.Y - p1.Y), null);
+	   Dx := P2.X - P1.X;
+	   Dy := P2.Y - P1.Y;
+
+	   tmp := new Side'(max(p1.Y,p2.Y),XYmin(p1,p2), Dx, Dy, 0, null);
 	   if Sides /= null then
 		   -- Side will be inserted into an existing table
 		   while cour /= null and not inserted loop
@@ -174,9 +185,18 @@ package body Aux is
 
 		   -- Update the values
 		   if curr.Dy /= 0 then
-			   curr.X_Ymin := curr.X_Ymin + curr.Dx/curr.Dy;
-		   end if;
-		   
+			   curr.X_Ymin := curr.X_Ymin + curr.Dx/curr.Dy; 
+			   curr.e := curr.e + abs(curr.Dx);
+			   if abs(2*curr.e) > abs(curr.Dy) then
+				   if (curr.Dx > 0 and then curr.Dy < 0) or else (curr.Dx < 0 and then curr.Dy > 0) then
+					   curr.X_Ymin := curr.X_Ymin - 1;
+				   else
+					   curr.X_Ymin := curr.X_Ymin + 1;
+				   end if;
+				   -- Decrease curr.e, curr.e >= 0
+				   curr.e := curr.e - curr.Dy*curr.Dy/abs(curr.Dy);
+			   end if;
+		   end if;		   
 		 
 		   -- Remove sides
 		   if curr.Ymax = line then

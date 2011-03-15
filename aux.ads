@@ -22,6 +22,7 @@ Package Aux is
    type Side is record
       Ymax, X_Ymin    : Integer;
       Dx, Dy          : Integer;
+	  e				  : Integer;
       Next            : SidePtr;
    end record;
 

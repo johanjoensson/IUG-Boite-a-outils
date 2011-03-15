@@ -293,7 +293,7 @@ procedure DrawLine (anImage                 : ImagePtr;
       PCurrent      : PointPtr  := Points ;	-- The Point that is currently used for drawing a line.
       Ymin, Ymax    : Integer ;		        -- Max and Min values of y, used to determine maximal heigth of the polygone
 	  Xmin,Xmax		: Integer ;
-	  I             : Integer   := 0 ;		-- Integer used to track which line a point is on
+	  y				: Integer	:= 0 ;
       Final_Y       : Integer   := 0 ;		-- Variable showng on what line the last Side begins
 	  TSides		: array (0..image.height) of SidePtr ;	-- The list of all sides in the polygone
       TSidesActive  : SidePtr   := null ;   -- Pointer towards the "active sides" of the polygone
@@ -301,8 +301,7 @@ procedure DrawLine (anImage                 : ImagePtr;
       color         : Pixel     := pixelValue ;	-- Color of the polygone
 	  pPtr			: PixelPtr ;			-- Pointer to the current pixel to paint
 	  cour			: SidePtr ;				-- Pointer to the current side treated
-
-	  XClipMin, XClipMax, YClipMin, YClipMax		: integer;
+	  first_line	: Boolean ;
 
    begin
       -- Calculate the highest and lowest values of y.
@@ -321,29 +320,53 @@ procedure DrawLine (anImage                 : ImagePtr;
          -- Insert the last side and complete the polygone
          Insert_Side(PCurrent, Point1, Tsides(Final_Y));
 
-		 XClipMin := ClipRect.all.topLeft.X ;
-		 XClipMax := ClipRect.all.bottomRight.X ;
-		 YClipMin := ClipRect.all.topLeft.Y ;
-		 YClipMax := ClipRect.all.bottomRight.Y ;
-
          --Fill the polygone!
-         for y in Ymin ..Ymax loop
+		 Y := Ymin;
+		 if ClipRect /= null then
+			 Ymax := min(ClipRect.bottomRight.Y, Ymax);
+		 end if;
+		 put_line(Integer'Image(Ymin) & " to" & integer'Image(Ymax));
+		 while Y in Ymin .. Ymax loop
 			 -- Insert sides into TSidesActive, update the sides in TSidesActive, sort them and remove if necessary
-             Insert_Side(Tsides(y), TSidesActive);
-			 Update_Sides(TSidesActive, y);
+			 first_line := false;
+			 if ClipRect /= null then
+				 -- Clipping, find the first line to draw on.
+				 while y < ClipRect.topLeft.Y loop
+					 put_line("loop");
+					 Insert_Side(Tsides(y), TSidesActive);
+					 Update_Sides(TSidesActive, y);
+					 y := y +1;
+					 first_line := true;
+				 end loop;
+			 end if;
+			 -- Clipping activated
+			 if not first_line then
+				 Insert_Side(Tsides(y), TSidesActive);
+				 Update_Sides(TSidesActive, y);
+			 end if;
              cour := TSidesActive;
 			 -- Fill in all intervals
              while cour /= null and then cour.next /= null loop
 				 -- Fill in the current interval
-				 for x in cour.X_Ymin .. Cour.next.X_Ymin loop
+				 if ClipRect /= null then
+					 Xmin := max(cour.X_Ymin, clipRect.topLeft.X);
+					 Xmax := min(cour.next.X_Ymin, ClipRect.bottomRight.X);
+				 else
+					 Xmin := Cour.X_Ymin;
+					 Xmax := Cour.next.X_Ymin;
+				 end if;
+
+				 put_line("x:" & Integer'Image(Xmin) & " ->" & Integer'Image(Xmax));
+
+				 for x in Xmin .. Xmax loop
 					 pPtr:= Image.basePixel + ptrdiff_t (Image.width * y + x);
-					 if (ClipRect /= null) and then Check(x,y,ClipRect.TopLeft.X,ClipRect.TopLeft.Y,ClipRect.BottomRight.X,ClipRect.BottomRight.Y) then
 	   					 PPtr.all:= Color ;
-	  				 end if ;
 				 end loop;
 				 -- Move on to the next interval
                  cour := cour.next.next;
              end loop;
+			 put_line("y:" & Integer'Image(y));
+			 y := y+1;
          end loop;
    end Polygone;
 
