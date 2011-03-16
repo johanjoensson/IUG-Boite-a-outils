@@ -1,7 +1,7 @@
 with
-  Ada_SDL_Video, Aux;
+  Ada_SDL_Video;
 use
-  Ada_SDL_Video, Aux;
+  Ada_SDL_Video;
 
 package Gr_Shapes is
 
@@ -15,13 +15,40 @@ package Gr_Shapes is
    type ImagePtr is access all Image;
 
    -- Point data type
---   type Point;
---   type PointPtr is access all Point;
+   type Point;
+   type PointPtr is access all Point;
 
---   type Point is record
---      x, y          : Integer;
---      next          : PointPtr;
---   end record;
+   type Point is record
+      x, y          : Integer;
+      next          : PointPtr;
+   end record;
+
+   -- Rectangle data type
+   type Rectangle is record
+      topLeft, bottomRight : Point;
+   end record;
+
+   type RectanglePtr is access all Rectangle;
+
+   type Cote;
+   type CotePtr is access all Cote;
+
+   type Cote is record
+      Ymax, X_Ymin    : Integer;
+      Dx, Dy          : Integer;
+      E               : Integer;
+      Next            : CotePtr;
+   end record;
+
+   type TableCotes is array (Integer range <>) of CotePtr ;
+
+   --
+   -- Draw line
+
+   procedure DrawLine (anImage                 : ImagePtr;
+                       xMin, yMin, xMax, yMax  : Integer;
+                       color                   : Pixel;
+                       clipRect   : RectanglePtr :=null) ;
 
    --
    -- Draw in the image <image> clipped by the rectangle <clipRect>
@@ -29,29 +56,11 @@ package Gr_Shapes is
    --   with the pixel value <pixelValue>.
    -- If <clipRect> is NULL, then clip against the entire image.
    --
-
-
-   -- Side data type for polygons
---   type Side;
---   type SidePtr is access all Side;
-
---  type Side is record
---      Ymax, X_Ymin    : Integer;
---      Dx, Dy          : Integer;
---      Next            : SidePtr;
---   end record;
-
-
-   procedure DrawLine
-     (anImage                 : ImagePtr;
-                          xMin, yMin, xMax, yMax  : Integer;
-                          color                   : Pixel);
-
    procedure Polyline
      (image      : ImagePtr;
       points     : PointPtr;
       pixelValue : Pixel;
-      clipRect   : RectanglePtr     := NULL);
+      clipRect   : RectanglePtr := null   );
 
    --
    -- Draw in the image <image> clipped by the rectangle <clipRect>
@@ -59,27 +68,10 @@ package Gr_Shapes is
    --   with the pixel value <pixelValue>
    -- If <clipRect> is NULL, then clip against the entire image.
    --
-
-
    procedure Polygone
      (image      : ImagePtr;
       points     : PointPtr;
       pixelValue : Pixel;
-	  clipRect   : RectanglePtr := null);
-
-   procedure DryDrawPoint (XMin, YMin, XMax, YMax  :in out Integer);
-
-  
-   function Check (X,Y,XLMin,YLMin,XLMax,YLMax: Integer) return Boolean;
-
-
-   procedure ClipLine (anImage      : ImagePtr;
-                       XMin,YMin,XMax,YMax : Integer ;
-                       color : Pixel;
-                       XLMin,YLMin,XLMax,YLMax : Integer);
-
-
+      clipRect   : RectanglePtr     := NULL);
 
 end Gr_Shapes;
-
-

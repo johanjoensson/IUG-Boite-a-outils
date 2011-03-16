@@ -1,24 +1,44 @@
-with  Ada_SDL_Video, Interfaces.C, Ada.Text_IO, Ada.Integer_Text_IO, Aux;
-use   Ada_SDL_Video, Interfaces.C, Ada_SDL_Video.PixelPtrPkg, Ada.Text_IO,Ada.Integer_Text_IO, Aux;
+with  Ada_SDL_Video, Interfaces.C, Ada.Text_IO, Ada.Integer_Text_IO, Ada.Unchecked_Deallocation ;
+use   Ada_SDL_Video, Interfaces.C, Ada_SDL_Video.PixelPtrPkg, Ada.Text_IO, Ada.Integer_Text_IO;
 
 package body Gr_Shapes is
+   procedure Liberer is new Ada.Unchecked_Deallocation (Cote,CotePtr);
 
-procedure DrawLine (anImage                 : ImagePtr;
+   function Min(A,B : Integer) return Integer is
+   begin
+      if A <= B then
+         return A ;
+      else
+         return B ;
+      end if ;
+   end ;
+
+   function Max(A,B : Integer) return Integer is
+   begin
+      if A <= B then
+         return B ;
+      else
+         return A ;
+      end if ;
+   end ;
+
+   function Check (X,Y,XLMin,YLMin,XLMax,YLMax: Integer) return Boolean is
+   begin
+      if X >= XLMin and X <= XLMax and Y >= YLMin and Y <= YLMax then
+         return True ;
+      else
+         return False ;
+      end if ;
+   end Check ;
+
+
+   procedure DrawLine (anImage                 : ImagePtr;
                        xMin, yMin, xMax, yMax  : Integer;
-                       color                   : Pixel) is
-      e           : Integer;
-      x_i, y_i    : Integer;
-      dx, dy      : Integer;
+                       color                   : Pixel ;
+                       clipRect                : RectanglePtr:=null ) is
+      E,x_i,Y_i,dx,Dy,X0,X1,Y0,y1: Integer;
       pPtr        : PixelPtr;
-
-      x0          : Integer ;
-      y0          : Integer ;
-      x1          : Integer ;
-      y1          : Integer ;
-
       Pos         : Boolean ;
-
-
    begin
       if XMin < XMax then
          X0:= XMin ;
@@ -37,39 +57,44 @@ procedure DrawLine (anImage                 : ImagePtr;
          Y1:= YMin ;
       end if ;
 
-
       dx:= x1 - x0 ;
       dy:= y1 - y0;
       e:= 0;
       x_i:= x0;
       y_i:= y0;
-
       pPtr:= anImage.basePixel + ptrdiff_t (anImage.width * y0 + x0);
 
       if Dx = 0 then
          while Y_I <= Y1 loop
-            PPtr.all:= Color ;
+            if ClipRect /= null then
+               if Check(X_I,Y_I,ClipRect.TopLeft.X,ClipRect.TopLeft.Y,ClipRect.BottomRight.X,ClipRect.BottomRight.Y) then
+                  PPtr.all:= Color ;
+               end if ;
+            else
+               PPtr.all:= Color ;
+            end if ;
             Y_i:= Y_i + 1 ;
             pPtr    := pPtr + ptrdiff_t (anImage.width);
          end loop ;
       else
-
          if Dy >= 0 then
             Pos:= True ;
          else
             Pos:= False ;
             Dy:= -Dy ;
          end if ;
-
-         if abs(dy/dx) < 1 then
+         if dy < dx then
             while x_i <= x1 loop
-               pPtr.all  := Color ;
-
+               if ClipRect /= null then
+                  if Check(X_I,Y_I,ClipRect.TopLeft.X,ClipRect.TopLeft.Y,ClipRect.BottomRight.X,ClipRect.BottomRight.Y) then
+                     pPtr.all  := Color ;
+                  end if ;
+               else
+                  PPtr.all:= Color ;
+               end if ;
                x_i       := x_i + 1;
                Increment(pPtr) ;
-
                e         := e + dy ;
-
                if 2*e > dx then
                   if Pos = True then
                      y_i     := y_i + 1 ;
@@ -80,30 +105,19 @@ procedure DrawLine (anImage                 : ImagePtr;
                   end if ;
                   e       := e - dx ;
                end if;
-
             end loop;
-
-         elsif (dy/dx) = 1 then
-            while x_i <= x1 loop
-               pPtr.all  := color;
-               x_i       := x_i + 1;
-               Increment (pPtr);
-               if Pos = True then
-                  y_i     := y_i + 1;
-                  pPtr    := pPtr + ptrdiff_t (anImage.width);
-               else
-                  y_i     := y_i - 1;
-                  pPtr    := pPtr - ptrdiff_t (anImage.width);
-               end if ;
-            end loop;
-
          else
             if Pos then
                while y_i <= y1 loop
-                  pPtr.all := color ;
+                  if ClipRect /= null then
+                     if Check(X_I,Y_I,ClipRect.TopLeft.X,ClipRect.TopLeft.Y,ClipRect.BottomRight.X,ClipRect.BottomRight.Y) then
+                        pPtr.all := color ;
+                     end if ;
+                  else
+                     PPtr.all:= Color ;
+                  end if ;
                   Y_i := Y_I + 1 ;
                   pPtr    := pPtr + ptrdiff_t (anImage.width);
-
                   E:= E + Dx ;
                   if 2*E > Dy then
                      X_i:= X_I + 1 ;
@@ -113,10 +127,15 @@ procedure DrawLine (anImage                 : ImagePtr;
                end loop ;
             else
                while Y_I >= Y1 loop
-                  PPtr.all := Color ;
+                  if ClipRect /= null then
+                     if Check(X_I,Y_I,ClipRect.TopLeft.X,ClipRect.TopLeft.Y,ClipRect.BottomRight.X,ClipRect.BottomRight.Y) then
+                        PPtr.all := Color ;
+                     end if ;
+                  else
+                     PPtr.all:= Color ;
+                  end if ;
                   Y_i := Y_I - 1 ;
                   pPtr    := pPtr - ptrdiff_t (anImage.width);
-
                   E:= E + Dx ;
                   if 2*E > Dy then
                      X_i:= X_I + 1 ;
@@ -130,245 +149,308 @@ procedure DrawLine (anImage                 : ImagePtr;
    end DrawLine;
 
 
-   procedure DryDrawPoint (XMin, YMin, XMax, YMax  :in out Integer) is
-      Dx,Dy,E : Integer ;
-      Pos: Boolean ;
-   begin
-      Dx:= XMax - XMin ;
-      Dy:= YMax - yMin;
-      E:= 0;
-
-      if Dx = 0 then
-            YMin:= YMin + 1 ;
-      else
-
-         if Dy >= 0 then
-            Pos:= True ;
-         else
-            Pos:= False ;
-            Dy:= -Dy ;
-         end if ;
-
-         if (dy/dx) < 1 then
-
-            xMin       := xMin + 1;
-
-            e         := e + dy ;
-
-            if 2*e > dx then
-               if Pos = True then
-                  yMin     := yMin + 1 ;
-               else
-                  yMin     := yMin - 1 ;
-               end if ;
-               e       := e - dx ;
-            end if;
-
-         elsif (dy/dx) = 1 then
-            xMin       := xMin + 1;
-            if Pos = True then
-               yMin     := yMin + 1;
-            else
-               yMin     := yMin - 1;
-            end if ;
-
-         else
-            if Pos = True then
-               YMin := YMin + 1 ;
-            else
-               YMin := YMin - 1 ;
-            end if ;
-            E:= E + Dx ;
-            if 2*E > Dy then
-               XMin:= XMin + 1 ;
-               E:= E - Dy ;
-            end if ;
-         end if ;
-      end if ;
-   end DryDrawPoint ;
-
-
-   function Check (X,Y,XLMin,YLMin,XLMax,YLMax: Integer) return Boolean is
-   begin
-      if X >= XLMin and X <= XLMax and Y >= YLMin and Y <= YLMax then
-         return True ;
-      else
-         return False ;
-      end if ;
-   end Check ;
-
-
-
-
-   procedure ClipLine (anImage      : ImagePtr;
-                       XMin,YMin,XMax,YMax : Integer ;
-                       color : Pixel;
-                       XLMin,YLMin,XLMax,YLMax : Integer) is
-      NewImage: ImagePtr:= anImage ;
-      Cou: Pixel := color ;
-      X0,Y0,X1,Y1,NewX0,NewY0,NewX1,NewY1: Integer ;
-
-   begin
-      if XMin < XMax then
-         X0:= XMin ;
-         Y0:= YMin ;
-         X1:= XMax ;
-         Y1:= YMax ;
-      elsif XMin = XMax then
-         X0:= XMin ;
-         Y0:= Min(YMin,YMax) ;
-         X1:= XMax ;
-         Y1:= Max(YMin,yMax) ;
-      else
-         X0:= XMax ;
-         Y0:= YMax ;
-         X1:= XMin ;
-         Y1:= YMin ;
-      end if ;
-
-      if not Check(X0,Y0, XLMin,YLMin,XLMax,YLMax) then
-         while X0 /= X1 and not Check(X0,Y0, XLMin,YLMin,XLMax,YLMax) loop
-            DryDrawPoint(X0,Y0,X1,Y1) ;
-         end loop ;
-         if X0 /= X1 and Check(X0,Y0, XLMin,YLMin,XLMax,YLMax) then
-            NewX0:= X0 ;
-            NewY0:= Y0 ;
-         elsif X0 = X1 and Check(X0,Y0, XLMin,YLMin,XLMax,YLMax) then
-            NewX0:= X0 ;
-            NewY0:= Y0 ;
-            NewX1:= X1 ;
-            NewY1:= Y1 ;
-         end if ;
-
-
-         while X0 /= X1 and Check(X0,Y0, XLMin,YLMin,XLMax,YLMax) loop
-            DryDrawPoint(X0,Y0,X1,Y1) ;
-            NewX1:= X0 ;
-            NewY1:= Y0 ;
-         end loop ;
-
-         DrawLine(NewImage,NewX0,NewY0,NewX1,NewY1,Cou) ;
-
-      else
-         NewX0:= X0 ;
-         NewY0:= Y0 ;
-         while X0 /= X1 and Check(X0,Y0, XLMin,YLMin,XLMax,YLMax) loop
-            DryDrawPoint(X0,Y0,X1,Y1) ;
-            NewX1:= X0 ;
-            NewY1:= Y0 ;
-         end loop ;
-
-         DrawLine(NewImage,NewX0,NewY0,NewX1,NewY1,Cou) ;
-      end if ;
-
-   end ClipLine ;
-
-
-
-
-
-
    procedure Polyline (image      : ImagePtr;
                        points     : PointPtr;
                        pixelValue : Pixel;
-                       clipRect   : RectanglePtr      := NULL) is
-      Cour,Suiv: PointPtr ;
+                       clipRect   : RectanglePtr :=null    ) is
+      Cour: PointPtr:= points ;
    begin
-      Cour:= Points ;
-      Suiv:= Cour.Next ;
-      --while Suiv /= null loop
-
-         DrawLine(Image,Cour.X,Cour.Y,Suiv.X,Suiv.Y,pixelValue);
-        -- Cour:= Suiv ;
-        -- Suiv:= Cour.Next ;
-     -- end loop ;
+      if Cour.Next = null then
+         DrawLine(image, Cour.X, Cour.Y, Cour.X, Cour.Y, PixelValue,ClipRect) ;
+      else
+         while Cour.next /= null loop
+            DrawLine(image, Cour.X, Cour.Y, Cour.Next.X, Cour.Next.Y, PixelValue,ClipRect);
+            Cour := Cour.next;
+         end loop ;
+      end if ;
    end Polyline;
+
+
+
+   procedure InitScanline (P: in PointPtr; Min, Max : out Integer) is
+      --Initialiser la Scanline pour trouver le Ymin et Ymax
+      Tmp : PointPtr := P.next ;
+   begin
+      Min := P.Y ;
+      Max := P.Y ;
+      while Tmp /= null loop
+         if Tmp.Y < Min then
+            Min := Tmp.Y ;
+         elsif Tmp.Y > Max then
+            Max := Tmp.Y ;
+         end if ;
+         Tmp := Tmp.Next ;
+      end loop ;
+   end;
+
+   function X_YMin(Point1,Point2: PointPtr) return integer is
+      -- Return X_Ymin,si Ymin=Ymax return Xmin
+      Aux : integer;
+   begin
+      if Point1.Y < Point2.Y then
+         Aux:= Point1.X;
+      elsif point2.Y < point1.Y then
+         Aux:= Point2.X;
+      else
+         Aux:= Min(Point1.X,Point2.X);
+      end if;
+      return Aux;
+   end X_Ymin;
+
+   procedure Table_Des_Cotes (P1,P2: in PointPtr ; Cotes: in out CotePtr) is
+      --Inserer la cote dans le table des cotes
+      Tmp,Prec: CotePtr ;
+      Cour: CotePtr:= Cotes ;
+      DejaInsere: Boolean:= False ;
+   begin
+      Tmp:= new Cote'(Max(P1.Y,P2.Y),X_Ymin(P1,P2),(P2.X - P1.X),(P2.Y - P1.Y),0,null) ;
+      if Cotes = null then
+         Cotes:= Tmp ;
+      else
+         Prec:= null ;
+         while Cour /= null and then not DejaInsere loop
+            if Cour.X_Ymin > Tmp.X_Ymin then
+               if Prec = null then
+                  -- Inserer dans la premiere position
+                  Tmp.Next:= Cotes ;
+                  Cotes:= Tmp ;
+               else
+                  -- Inserer la cote
+                  Prec.Next:= Tmp ;
+                  Tmp.Next:= Cour ;
+               end if;
+               DejaInsere:= True ;
+            elsif Cour.X_Ymin = Tmp.X_Ymin then
+               if Cour.Dy = 0 then
+                  if Prec = null then
+                     -- Inserer dans la premiere position
+                     Tmp.Next:= Cotes ;
+                     Cotes:= Tmp ;
+                  else
+                     -- Inserer la cote
+                     Prec.Next:= Tmp ;
+                     Tmp.Next:= Cour ;
+                  end if;
+                  DejaInsere:= True ;
+               else
+                  if Tmp.Dy /= 0 then
+                     if Min(Cour.Dx,Cour.Dy) >= 0 then
+                        if Min(Tmp.Dx,Tmp.Dy) <= 0 and Max(Tmp.Dx,Tmp.Dy) >= 0 then
+                           if Prec = null then
+                              -- Inserer dans la premiere position
+                        Tmp.Next:= Cotes ;
+                        Cotes:= Tmp ;
+                           else
+                              -- Inserer la cote
+                              Prec.Next:= Tmp ;
+                              Tmp.Next:= Cour ;
+                           end if;
+                           DejaInsere:= True ;
+                        elsif Min(Tmp.Dx,Tmp.Dy) >= 0 or Max(Tmp.Dx,Tmp.Dy) <= 0 then
+                           if abs(Cour.Dx * Tmp.Dy) > abs(Tmp.Dx * Cour.Dy) then
+                              if Prec = null then
+                                 -- Inserer dans la premiere position
+                                 Tmp.Next:= Cotes ;
+                                 Cotes:= Tmp ;
+                              else
+                                 -- Inserer la cote
+                                 Prec.Next:= Tmp ;
+                                 Tmp.Next:= Cour ;
+                              end if;
+                              DejaInsere:= True ;
+                           end if ;
+                        end if ;
+                     end if ;
+                  end if ;
+               end if ;
+            end if;
+            Prec:= Cour ;
+            Cour:= Cour.Next ;
+         end loop;
+         if not DejaInsere then
+            -- Inserer a la fin de la chaine
+            Prec.Next:= Tmp ;
+         end if;
+      end if ;
+   end Table_Des_Cotes ;
+
+   procedure Table_Des_Cotes_Actifs(Cotes: in CotePtr; TCA: in out CotePtr) is
+      --Construire le table des cotes actifs
+      Cour,Suiv: CotePtr:= Cotes ;
+      TCACour,TCAPrec: CotePtr ;
+      DejaInsere: Boolean:= False ;
+   begin
+      while Cour /= null loop
+         -- Initialisation des variables
+         DejaInsere:= False ;
+         Suiv:= Cour.Next ;
+         Cour.Next:= null ;
+         TCAPrec:= null ;
+         TCACour:= TCA ;
+         if TCA = null then
+            TCA:= Cour ;
+         else
+            while TCACour /= null and not DejaInsere loop
+               if Cour.X_Ymin < TCACour.X_Ymin then
+                  if TCAPrec = null then
+                     -- Inserer dans la premiere position
+                     Cour.Next := TCA;
+                     TCA:= Cour;
+                  else
+                     -- Inserer dans la chaine
+                     TCAPrec.Next := Cour;
+                     Cour.Next := TCACour;
+                  end if;
+                  DejaInsere := true;
+               elsif Cour.X_Ymin = TCACour.X_Ymin then
+                  if TCACour.Dy = 0 then
+                     if TCAPrec = null then
+                        -- Inserer dans la premiere position
+                        Cour.Next:= TCA ;
+                        TCA:= Cour ;
+                     else
+                        -- Inserer la cote
+                        TCAPrec.Next:= Cour ;
+                        Cour.Next:= TCACour ;
+                     end if;
+                     DejaInsere:= True ;
+                  else
+                     if Cour.Dy /= 0 then
+                        if Min(TCACour.Dx,TCACour.Dy) >= 0 then
+                           if Min(Cour.Dx,Cour.Dy) <= 0 and Max(Cour.Dx,Cour.Dy) >= 0 then
+                              if TCAPrec = null then
+                                 -- Inserer dans la premiere position
+                                 Cour.Next:= TCA ;
+                                 TCA:= Cour ;
+                              else
+                                 -- Inserer la cote
+                                 TCAPrec.Next:= Cour ;
+                                 Cour.Next:= TCACour ;
+                              end if;
+                              DejaInsere:= True ;
+                           elsif Min(Cour.Dx,Cour.Dy) >= 0 or Max(Cour.Dx,Cour.Dy) <= 0 then
+                              if abs(TCACour.Dx * Cour.Dy) > abs(Cour.Dx * TCACour.Dy) then
+                                 if TCAPrec = null then
+                                    -- Inserer dans la premiere position
+                                    Cour.Next:= TCA ;
+                                    TCA:= Cour ;
+                                 else
+                                    -- Inserer la cote
+                                    TCAPrec.Next:= Cour ;
+                                    Cour.Next:= TCACour ;
+                                 end if;
+                                 DejaInsere:= True ;
+                              end if ;
+                           end if ;
+                        end if ;
+                     end if ;
+                  end if;
+               end if;
+               TCAPrec := TCACour;
+               TCACour := TCACour.Next;
+            end loop;
+            if not DejaInsere then
+               -- Inserer a la fin de la chaine
+               TCAPrec.next := Cour;
+               DejaInsere := true;
+            end if;
+         end if ;
+         Cour := Suiv;
+      end loop;
+   end Table_Des_Cotes_Actifs ;
+
+   procedure Update_Cotes(Cotes : in out CotePtr; Line : in Natural) is
+      Cour, Sent        : CotePtr       := Cotes;
+      Prec            : CotePtr       := null;
+      Suiv            : CotePtr;
+      TmpCotes        : CotePtr;
+   begin
+      while Cour /= null loop
+         Suiv := Cour.next;
+         -- Renouveler les valeurs de X_Ymin
+         if Cour.Dy /= 0 then
+            if Min(Cour.Dx,Cour.Dy) >= 0 or Max(Cour.Dx,Cour.Dy) <= 0 then
+               Cour.X_Ymin:= Cour.X_Ymin + (abs(Cour.Dx) + Cour.E)/abs(Cour.Dy) ;
+               Cour.E:= (abs(Cour.Dx) + Cour.E) mod abs(Cour.Dy) ;
+            else
+               Cour.X_Ymin:= Cour.X_Ymin - (abs(Cour.Dx) + Cour.E)/abs(Cour.Dy) ;
+               Cour.E:= (abs(Cour.Dx) + Cour.E) mod abs(Cour.Dy) ;
+            end if;
+         end if ;
+         -- Liberer les cotes inutiles
+         if Cour.Ymax = line then
+            TmpCotes := Cour;
+            if Prec = null then
+               Cour := null;
+               Sent := Suiv;
+            else
+               Prec.next := Suiv;
+               Cour := Prec;
+            end if;
+            Liberer(TmpCotes);
+         end if;
+         Prec := Cour;
+         Cour := Suiv;
+      end loop;
+      Cotes := Sent;
+      TmpCotes := null;
+      Table_Des_Cotes_Actifs(Cotes, TmpCotes);
+      Cotes := TmpCotes;
+   end Update_Cotes;
 
    procedure Polygone (image      : ImagePtr;
                        points     : PointPtr;
                        pixelValue : Pixel;
-					   clipRect   : RectanglePtr := null) is
-   
-      Point1        : PointPtr  := Points ;	-- The first point, the starting point of the polygone
-      PCurrent      : PointPtr  := Points ;	-- The Point that is currently used for drawing a line.
-      Ymin, Ymax    : Integer ;		        -- Max and Min values of y, used to determine maximal heigth of the polygone
-	  Xmin,Xmax		: Integer ;
-	  y				: Integer	:= 0 ;
-      Final_Y       : Integer   := 0 ;		-- Variable showng on what line the last Side begins
-	  TSides		: array (0..image.height) of SidePtr ;	-- The list of all sides in the polygone
-      TSidesActive  : SidePtr   := null ;   -- Pointer towards the "active sides" of the polygone
-
-      color         : Pixel     := pixelValue ;	-- Color of the polygone
-	  pPtr			: PixelPtr ;			-- Pointer to the current pixel to paint
-	  cour			: SidePtr ;				-- Pointer to the current side treated
-	  first_line	: Boolean ;
-
+                       clipRect   : RectanglePtr  :=    null) is
+      Ymin,Ymax: Integer ;
+      PDeb,PCour: PointPtr:= points ;
+      TCA,Cour: CotePtr ;
+      TC: array (0..Image.height) of CotePtr ;
+      pPtr: PixelPtr ;
+      Final_Y,X: Integer ;
+      Paire: Boolean ;
    begin
-      -- Calculate the highest and lowest values of y.
-      Ymax_Min(Points, Ymin, Ymax);
-	  Xmax_Min(Points, Xmin, Xmax);
-      -- Insert all sides in TSides, the chain TSides(n) is sorted after x
-         while PCurrent.next /= null loop
-               -- Insert the side in TSides and draw the lines of the polygone.
-	           -- Sides are inserted in their proper place so that the chain is always sorted
-               Insert_Side(Pcurrent, Pcurrent.Next, Tsides(Min(Pcurrent.y, Pcurrent.next.y)));
-               PCurrent := PCurrent.next;
+      InitScanline(Points, Ymin, Ymax);
+      --Polyline(Image,Points,pixelValue) ;
+      while PCour.Next /= null loop
+         if PCour.Y /= PCour.Next.Y then
+            Table_Des_Cotes(PCour, PCour.Next, TC(Min(PCour.y, PCour.next.y)));
+         end if ;
+         PCour := PCour.next;
+      end loop ;
+      --DrawLine(Image,PCour.X,PCour.Y,PDeb.X,PDeb.Y,pixelValue) ;
+      Final_Y := Min(PCour.Y, PDeb.Y);
+      if PCour.Y /= PDeb.Y then
+         Table_Des_Cotes(PCour, PDeb, TC(Final_Y));
+      end if ;
+	  
+
+      for y in Ymin ..Ymax-1 loop
+		  Table_Des_Cotes_Actifs(TC(y), TCA);
+         Cour := TCA;
+         X:= Cour.X_Ymin + 1 ;
+         pPtr:= Image.basePixel + ptrdiff_t (Image.width * y + x);
+         Paire:= False ;
+         while Cour.Next /= null loop
+            if not Paire then
+               while X <= Cour.Next.X_Ymin loop
+                  pPtr.all:= pixelValue ;
+                  Increment(pPtr) ;
+                  X:= X+1 ;
+               end loop;
+               Paire:= True ;
+               Cour:= Cour.Next ;
+            else
+               while X <= Cour.Next.X_Ymin loop
+                  Increment(pPtr) ;
+                  X:= X+1 ;
+               end loop;
+               Paire:= False ;
+               Cour:= Cour.Next ;
+            end if ;
          end loop ;
-
-         -- Calculate where the last side begins
-         Final_Y := Min(PCurrent.Y, Point1.Y);
-         -- Insert the last side and complete the polygone
-         Insert_Side(PCurrent, Point1, Tsides(Final_Y));
-
-         --Fill the polygone!
-		 Y := Ymin;
-		 if ClipRect /= null then
-			 Ymax := min(ClipRect.bottomRight.Y, Ymax);
-		 end if;
-		 put_line(Integer'Image(Ymin) & " to" & integer'Image(Ymax));
-		 while Y in Ymin .. Ymax loop
-			 -- Insert sides into TSidesActive, update the sides in TSidesActive, sort them and remove if necessary
-			 first_line := false;
-			 if ClipRect /= null then
-				 -- Clipping, find the first line to draw on.
-				 while y < ClipRect.topLeft.Y loop
-					 put_line("loop");
-					 Insert_Side(Tsides(y), TSidesActive);
-					 Update_Sides(TSidesActive, y);
-					 y := y +1;
-					 first_line := true;
-				 end loop;
-			 end if;
-			 -- Clipping activated
-			 if not first_line then
-				 Insert_Side(Tsides(y), TSidesActive);
-				 Update_Sides(TSidesActive, y);
-			 end if;
-             cour := TSidesActive;
-			 -- Fill in all intervals
-             while cour /= null and then cour.next /= null loop
-				 -- Fill in the current interval
-				 if ClipRect /= null then
-					 Xmin := max(cour.X_Ymin, clipRect.topLeft.X);
-					 Xmax := min(cour.next.X_Ymin, ClipRect.bottomRight.X);
-				 else
-					 Xmin := Cour.X_Ymin;
-					 Xmax := Cour.next.X_Ymin;
-				 end if;
-
-				 put_line("x:" & Integer'Image(Xmin) & " ->" & Integer'Image(Xmax));
-
-				 for x in Xmin .. Xmax loop
-					 pPtr:= Image.basePixel + ptrdiff_t (Image.width * y + x);
-	   					 PPtr.all:= Color ;
-				 end loop;
-				 -- Move on to the next interval
-                 cour := cour.next.next;
-             end loop;
-			 put_line("y:" & Integer'Image(y));
-			 y := y+1;
-         end loop;
-   end Polygone;
+         Update_Cotes(TCA, Y+1);
+      end loop;
+   end Polygone ;
 
 end Gr_Shapes;
-
