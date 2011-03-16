@@ -33,13 +33,17 @@ package body Gr_Shapes is
 
 
    procedure DrawLine (anImage                 : ImagePtr;
-                       xMin, yMin, xMax, yMax  : Integer;
+                       points				   : PointPtr;
                        color                   : Pixel ;
                        clipRect                : RectanglePtr:=null ) is
-      E,x_i,Y_i,dx,Dy,X0,X1,Y0,y1: Integer;
+      xMin,yMin,xMax,yMax,E,x_i,Y_i,dx,Dy,X0,X1,Y0,y1: Integer;
       pPtr        : PixelPtr;
       Pos         : Boolean ;
    begin
+	   xMin := points.X;
+	   yMin := points.Y;
+	   xMax := Points.next.X;
+	   yMax := Points.next.Y;
       if XMin < XMax then
          X0:= XMin ;
          Y0:= YMin ;
@@ -68,10 +72,10 @@ package body Gr_Shapes is
          while Y_I <= Y1 loop
             if ClipRect /= null then
                if Check(X_I,Y_I,ClipRect.TopLeft.X,ClipRect.TopLeft.Y,ClipRect.BottomRight.X,ClipRect.BottomRight.Y) then
-                  PPtr.all:= Color ;
+				PaintPixel(anImage,pPtr, color);
                end if ;
             else
-               PPtr.all:= Color ;
+				PaintPixel(anImage,pPtr, color);
             end if ;
             Y_i:= Y_i + 1 ;
             pPtr    := pPtr + ptrdiff_t (anImage.width);
@@ -87,10 +91,10 @@ package body Gr_Shapes is
             while x_i <= x1 loop
                if ClipRect /= null then
                   if Check(X_I,Y_I,ClipRect.TopLeft.X,ClipRect.TopLeft.Y,ClipRect.BottomRight.X,ClipRect.BottomRight.Y) then
-                     pPtr.all  := Color ;
+   					  PaintPixel(anImage,pPtr, color);
                   end if ;
                else
-                  PPtr.all:= Color ;
+				   PaintPixel(anImage,pPtr, color);
                end if ;
                x_i       := x_i + 1;
                Increment(pPtr) ;
@@ -111,10 +115,10 @@ package body Gr_Shapes is
                while y_i <= y1 loop
                   if ClipRect /= null then
                      if Check(X_I,Y_I,ClipRect.TopLeft.X,ClipRect.TopLeft.Y,ClipRect.BottomRight.X,ClipRect.BottomRight.Y) then
-                        pPtr.all := color ;
+   					  PaintPixel(anImage,pPtr, color);
                      end if ;
                   else
-                     PPtr.all:= Color ;
+   					  PaintPixel(anImage,pPtr, color);
                   end if ;
                   Y_i := Y_I + 1 ;
                   pPtr    := pPtr + ptrdiff_t (anImage.width);
@@ -129,10 +133,10 @@ package body Gr_Shapes is
                while Y_I >= Y1 loop
                   if ClipRect /= null then
                      if Check(X_I,Y_I,ClipRect.TopLeft.X,ClipRect.TopLeft.Y,ClipRect.BottomRight.X,ClipRect.BottomRight.Y) then
-                        PPtr.all := Color ;
+	  					 PaintPixel(anImage,pPtr, color);
                      end if ;
                   else
-                     PPtr.all:= Color ;
+   					  PaintPixel(anImage,pPtr, color);
                   end if ;
                   Y_i := Y_I - 1 ;
                   pPtr    := pPtr - ptrdiff_t (anImage.width);
@@ -155,11 +159,11 @@ package body Gr_Shapes is
                        clipRect   : RectanglePtr :=null    ) is
       Cour: PointPtr:= points ;
    begin
-      if Cour.Next = null then
-         DrawLine(image, Cour.X, Cour.Y, Cour.X, Cour.Y, PixelValue,ClipRect) ;
-      else
+      if Cour.Next /= null then
+--         DrawLine(image, Cour, Cour, PixelValue,ClipRect) ;
+--      else
          while Cour.next /= null loop
-            DrawLine(image, Cour.X, Cour.Y, Cour.Next.X, Cour.Next.Y, PixelValue,ClipRect);
+            DrawLine(image, Cour, PixelValue,ClipRect);
             Cour := Cour.next;
          end loop ;
       end if ;
@@ -434,7 +438,7 @@ package body Gr_Shapes is
          while Cour.Next /= null loop
             if not Paire then
                while X <= Cour.Next.X_Ymin loop
-                  pPtr.all:= pixelValue ;
+				   PaintPixel(image,pPtr, pixelValue);
                   Increment(pPtr) ;
                   X:= X+1 ;
                end loop;
@@ -453,19 +457,40 @@ package body Gr_Shapes is
       end loop;
    end Polygone ;
 
+   -- Procedure for painting a pixel with regard to alpha values.
+   procedure PaintPixel(currentImage	:in		ImagePtr;
+						pPixel			:in out	PixelPtr;
+						color			:in		Pixel) is
+
+		-- Set the indexes for all the channels
+	   iR	: Integer := currentImage.iR;
+	   iG	: Integer := currentImage.iG;
+	   iB	: Integer := currentImage.iB;
+	   iA	: Integer := currentImage.iA;
+   begin
+	   -- update all the values, one channel at a time
+	   pPixel(iR) := pPixel(iR)*((255 - color(iA))/255) + (color(iA)/255)*color(iR);
+	   pPixel(iG) := pPixel(iG)*((255 - color(iA))/255) + (color(iA)/255)*color(iG);
+	   pPixel(iB) := pPixel(iB)*((255 - color(iA))/255) + (color(iA)/255)*color(iB);
+   end;
 
    procedure RedrawWindow(	Window		: ImagePtr;
 							TabObj		: Nirvana;
-							pixelValue	: Pixel) is
+							pixelValue	: Pixel;
+							Clipper		: RectanglePtr) is
 
 		pPixel	: PixelPtr	:= Window.basePixel;
 		cour	: PointPtr;
    begin
-	   for y in 1..Window.height loop
-		   for x in 1..Window.width loop
+
+	   pPixel:= Window.basePixel + ptrdiff_t (Window.width * Clipper.topLeft.Y + Clipper.topLeft.X);
+
+	   for y in Clipper.topLeft.Y..Clipper.bottomRight.Y loop
+		   for x in Clipper.topLeft.X..Clipper.bottomRight.X loop
 			   pPixel.all := (0,0,0,0);
 			   Increment(pPixel);
 		   end loop;
+  		   pPixel:= Window.basePixel + ptrdiff_t (Window.width * y + Clipper.topLeft.x);
 	   end loop;
 
 	   for i in OBJECT loop
@@ -475,7 +500,7 @@ package body Gr_Shapes is
 				   if TabObj(i) /= null then
 					   cour := TabObj(i).PStart;
 					   while cour /= null loop
-						   DrawLine(Window, 30 ,30 , 45, 68, (0, 255, 0, 0));
+						   DrawLine(Window, cour, (0, 255, 0, 0));
 						   cour := cour.next;
 					   end loop;
 				   end if;

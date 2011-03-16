@@ -33,6 +33,7 @@ package body Ada_SDL_Main is
     red             : Pixel               := (0, 0, 0, 0);    -- We will construct a red pixel in this (including opaque alpha)
     blue            : Pixel               := (0, 0, 0, 0);    -- We will construct a blue pixel in this (including opaque alpha)
     black           : Pixel               := (0, 0, 0, 0);    -- We will construct a black pixel in this (including opaque alpha)
+	green			: Pixel				  := (0, 0, 0, 0);	  -- We will construct a green pixel in this (including opaque alpha)
     pixels, lines   : PixelPtr;                               -- Pointers to pixels, used in scanline algorithms
 
     key             : SDL_Key;                                -- The number of the keyboard key that was pressed
@@ -79,15 +80,18 @@ package body Ada_SDL_Main is
     -- Get the indices of the red, green, blue and alpha channel in pixels of this window
 
     Ada_SDL_GetSurfaceChannelIdx (surface, iR, iG, iB, iA);
+	iA := 6 - (iR + iG + iB);
 
     -- Create the color values (red, blue, black). Set alpha to 255 (opaque) if transparency is
     --  handled on this window.
 
     red(iR)         := 255;
     blue(iB)        := 255;
+	green(iG)		:= 255;
     if (iA /= -1) then
       red(iA)       := 255;
       blue(iA)      := 255;
+	  green(iA)		:= 255;
       black(iA)     := 255;
     end if;
 
@@ -163,12 +167,11 @@ package body Ada_SDL_Main is
     --end Transparence ;
 
 
-    Bluetran:= (128,0,127,0) ;
 
     --DrawLine (myImagePtr, 50, 200, 150, 450, Bluetran);
     --DrawLine (myImagePtr, 70, 200, 170, 450, Blue);
     --Polyline(myImagePtr,p1,Blue) ;
-	Polygone(myImagePtr,p1,Blue) ;
+	Polygone(myImagePtr,p1,Green) ;
 
     -- Release exclusive access to the window's pixel memory, tell the system to
     --  update the entire window on the screen.
@@ -213,7 +216,7 @@ package body Ada_SDL_Main is
 			res := SDL_LockSurface (surface);
 			Zen(Polygone) := new Shape'(p1, null);
 			Polygone(myImagePtr,p1,Blue) ;
-			RedrawWindow(myImagePtr,Zen, Black);
+--			RedrawWindow(myImagePtr,Zen, Black,((90, 90, null), (150, 150, null)));
 			SDL_UnlockSurface (surface);
 			SDL_UpdateRect (surface);
 
@@ -227,8 +230,11 @@ package body Ada_SDL_Main is
         -- The mouse moved
 
         Ada_SDL_GetMouseMotionEventParams (event, buttonStates, x, y, xrel, yrel);
+
+		CLipRect.bottomRight := (Integer(x),Integer(y), null);
+		ClipRect.topLeft := (Integer(x) - Integer(xrel), Integer(y)- Integer(yrel), null);
 	
-		RedrawWindow(myImagePtr,Zen, Black);
+		RedrawWindow(myImagePtr,Zen, Black,ClipRect);
 
 		m5.all	:=	(120,170,null);
 		m4.all  :=  (140,165,p5);

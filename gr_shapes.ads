@@ -46,7 +46,7 @@ package Gr_Shapes is
    -- Draw line
 
    procedure DrawLine (anImage                 : ImagePtr;
-                       xMin, yMin, xMax, yMax  : Integer;
+                       points				   : PointPtr;
                        color                   : Pixel;
                        clipRect   : RectanglePtr :=null) ;
 
@@ -74,6 +74,12 @@ package Gr_Shapes is
       pixelValue : Pixel;
       clipRect   : RectanglePtr     := NULL);
 
+   procedure PaintPixel(currentImage	:in		ImagePtr;
+						pPixel			:in out	PixelPtr;
+						color			:in		Pixel);
+   pragma inline (PaintPixel);
+
+
    type OBJECT is (Line, Polyline, Polygone);
 
    type Shape;
@@ -88,6 +94,7 @@ package Gr_Shapes is
 
 	procedure RedrawWindow(	Window		: ImagePtr;
 							TabObj		: Nirvana;
-							pixelValue	: Pixel);
+							pixelValue	: Pixel;
+							Clipper		: RectanglePtr);
 
 end Gr_Shapes;
