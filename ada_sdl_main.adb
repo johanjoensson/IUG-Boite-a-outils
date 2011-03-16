@@ -52,10 +52,13 @@ package body Ada_SDL_Main is
 
     myImagePtr      : ImagePtr;
     P1,P2,P3,P4,P5,P6  : PointPtr ;
+	m1,m2,m3,m4,m5	: PointPtr ;
     Cour            : PointPtr ;
     Diff            : Integer ;
     ClipRect        : RectanglePtr ;
     Bluetran        : Pixel   ;
+
+	Zen				: Nirvana;
   begin
 
     -- Initialize the ManyMouse package if required.
@@ -133,10 +136,10 @@ package body Ada_SDL_Main is
     ClipRect          := new Rectangle'((70,30,null),(90,90,null)) ;
 
 	p5	:=	new point'(120,170,null);
-	p4  :=  new point'(140,165,p5);
-    p3	:=  new point'(110,75,p4);
-    p2	:=  new	point'(120,150,p3);
-    p1	:=  new point'(92,90,p2);
+	p4  :=  new point'(90,90, null);
+	p3	:=  new point'(50,90,p4);
+	p2	:=  new	point'(90,50,p3);
+	p1	:=  new point'(50,50,p2);
     Cour:=  new Point'(50,50,null) ;
     for I in 0..20 loop
        Diff:= 100-10*(I/2) ;
@@ -165,7 +168,7 @@ package body Ada_SDL_Main is
     --DrawLine (myImagePtr, 50, 200, 150, 450, Bluetran);
     --DrawLine (myImagePtr, 70, 200, 170, 450, Blue);
     --Polyline(myImagePtr,p1,Blue) ;
-    Polygone(myImagePtr,p1,Blue) ;
+	Polygone(myImagePtr,p1,Blue) ;
 
     -- Release exclusive access to the window's pixel memory, tell the system to
     --  update the entire window on the screen.
@@ -181,6 +184,12 @@ package body Ada_SDL_Main is
     --  loop infinitely by waiting for a new event, and handling it.
 
     event := Ada_SDL_AllocateEvent;
+	m5	:=	new point'(120,170,null);
+	m4  :=  new point'(140,165,p5);
+	m3	:=  new point'(110,75,p4);
+	m2	:=  new	point'(120,150,p3);
+	m1	:=  new point'(92,90,p2);
+
     loop
       res := SDL_WaitEvent (event);
       exit when res /= 1;
@@ -199,13 +208,42 @@ package body Ada_SDL_Main is
           -- Move the system mouse to the center of window when pressing the "m" key
           SDL_WarpMouse (Uint16 (width / 2),  Uint16 (height / 2));
         end if;
+
+		if key = SDLK_p then
+			res := SDL_LockSurface (surface);
+			Zen(Polygone) := new Shape'(p1, null);
+			Polygone(myImagePtr,p1,Blue) ;
+			RedrawWindow(myImagePtr,Zen, Black);
+			SDL_UnlockSurface (surface);
+			SDL_UpdateRect (surface);
+
+		end if;
       end if;
 
       if Ada_SDL_EventType (event) = SDL_MOUSEMOTION then
 
+		  --res := SDL_LockSurface (surface);
+
         -- The mouse moved
 
         Ada_SDL_GetMouseMotionEventParams (event, buttonStates, x, y, xrel, yrel);
+	
+		RedrawWindow(myImagePtr,Zen, Black);
+
+		m5.all	:=	(120,170,null);
+		m4.all  :=  (140,165,p5);
+		m3.all	:=  (Integer(x),Integer(y)-12,null);
+		m2.all	:=  (Integer(x)+12,Integer(y),m3);
+		m1.all	:=  (integer(x),Integer(y),m2);
+
+
+		Polygone(myImagePtr,m1,Blue) ;
+	   
+		SDL_UnlockSurface (surface);
+		SDL_UpdateRect (surface);
+
+
+
 
         if not doManyMouse then
 

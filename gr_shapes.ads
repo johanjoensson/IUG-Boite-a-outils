@@ -74,4 +74,20 @@ package Gr_Shapes is
       pixelValue : Pixel;
       clipRect   : RectanglePtr     := NULL);
 
+   type OBJECT is (Line, Polyline, Polygone);
+
+   type Shape;
+   type ShapePtr is access all Shape;
+
+   type Shape is record
+	   PStart	: PointPtr;
+	   next		: ShapePtr;
+   end record;
+
+   type Nirvana is array(OBJECT) of ShapePtr;
+
+	procedure RedrawWindow(	Window		: ImagePtr;
+							TabObj		: Nirvana;
+							pixelValue	: Pixel);
+
 end Gr_Shapes;

@@ -453,4 +453,50 @@ package body Gr_Shapes is
       end loop;
    end Polygone ;
 
+
+   procedure RedrawWindow(	Window		: ImagePtr;
+							TabObj		: Nirvana;
+							pixelValue	: Pixel) is
+
+		pPixel	: PixelPtr	:= Window.basePixel;
+		cour	: PointPtr;
+   begin
+	   for y in 1..Window.height loop
+		   for x in 1..Window.width loop
+			   pPixel.all := (0,0,0,0);
+			   Increment(pPixel);
+		   end loop;
+	   end loop;
+
+	   for i in OBJECT loop
+		   cour := null;
+		   case i is
+			   when Line =>
+				   if TabObj(i) /= null then
+					   cour := TabObj(i).PStart;
+					   while cour /= null loop
+						   DrawLine(Window, 30 ,30 , 45, 68, (0, 255, 0, 0));
+						   cour := cour.next;
+					   end loop;
+				   end if;
+			   when Polyline =>
+				   if TabObj(i) /= null then
+					   cour := TabObj(i).PStart;
+					   while cour /= null loop
+						   Polyline(Window, Cour, (0, 255, 0, 0));
+						   cour := cour.next;
+					   end loop;
+				   end if;
+			   when Polygone =>
+				   if TabObj(i) /= null then
+					   cour := TabObj(i).PStart;
+					   while cour /= null loop
+						   Polygone(Window, Cour, (0, 255, 0, 0));
+						   cour := cour.next;
+					   end loop;
+				   end if;
+		   end case;
+	   end loop;
+   end RedrawWindow;
+
 end Gr_Shapes;
