@@ -411,41 +411,66 @@ package body Gr_Shapes is
       TCA,Cour: CotePtr ;
       TC: array (0..Image.height) of CotePtr ;
       pPtr: PixelPtr ;
-      Final_Y,X: Integer ;
+      Final_Y,X, line, XMAx: Integer ;
       Paire: Boolean ;
    begin
       InitScanline(Points, Ymin, Ymax);
-      --Polyline(Image,Points,pixelValue) ;
+	  -- Insertion des cotes.
       while PCour.Next /= null loop
          if PCour.Y /= PCour.Next.Y then
             Table_Des_Cotes(PCour, PCour.Next, TC(Min(PCour.y, PCour.next.y)));
          end if ;
          PCour := PCour.next;
       end loop ;
-      --DrawLine(Image,PCour.X,PCour.Y,PDeb.X,PDeb.Y,pixelValue) ;
-      Final_Y := Min(PCour.Y, PDeb.Y);
+      -- Insertion de la dernier cote
+	  Final_Y := Min(PCour.Y, PDeb.Y);
       if PCour.Y /= PDeb.Y then
          Table_Des_Cotes(PCour, PDeb, TC(Final_Y));
       end if ;
-	  
+	
+	  --Clipping
+	  line := Ymin;
+	  if ClipRect /= null then
+		  -- Trouve la premier scanline
+		  while line < ClipRect.topLeft.y loop 
+			  Table_Des_Cotes_Actifs(TC(line), TCA);
+			  Update_Cotes(TCA, line+1);
+			  line := line +1 ;
+		  end loop;
+		  Ymin := Max(Ymin, Cliprect.topLeft.Y);
+		  Ymax := Min(Ymax, ClipRect.bottomRight.Y);
+	  end if;
 
+	  -- Remplissage de poygone
       for y in Ymin ..Ymax-1 loop
+		  -- mets a jour le TCA
 		  Table_Des_Cotes_Actifs(TC(y), TCA);
          Cour := TCA;
-         X:= Cour.X_Ymin + 1 ;
+		 if ClipRect /= null then
+			 X:= Max(Cour.X_Ymin, ClipRect.topLeft.X) +1 ;
+		 else
+			 X := Cour.X_Ymin;
+		 end if;
          pPtr:= Image.basePixel + ptrdiff_t (Image.width * y + x);
          Paire:= False ;
          while Cour.Next /= null loop
+			 if ClipRect /= null then
+				 XMax := Min(cour.next.X_Ymin, ClipRect.bottomRight.X);
+			 else
+				 XMax := cour.next.X_Ymin;
+			 end if;
             if not Paire then
-               while X <= Cour.Next.X_Ymin loop
-				   PaintPixel(image,pPtr, pixelValue);
+				-- Paint the pixels.
+               while X <= XMax loop
+				  PaintPixel(image,pPtr, pixelValue);
                   Increment(pPtr) ;
                   X:= X+1 ;
                end loop;
                Paire:= True ;
                Cour:= Cour.Next ;
             else
-               while X <= Cour.Next.X_Ymin loop
+				-- Go to the next interval to paint.
+               while X <= XMax loop
                   Increment(pPtr) ;
                   X:= X+1 ;
                end loop;
@@ -469,9 +494,11 @@ package body Gr_Shapes is
 	   iA	: Integer := currentImage.iA;
    begin
 	   -- update all the values, one channel at a time
-	   pPixel(iR) := pPixel(iR)*((255 - color(iA))/255) + (color(iA)/255)*color(iR);
-	   pPixel(iG) := pPixel(iG)*((255 - color(iA))/255) + (color(iA)/255)*color(iG);
-	   pPixel(iB) := pPixel(iB)*((255 - color(iA))/255) + (color(iA)/255)*color(iB);
+		if color(iA) /= 0 then
+	 		pPixel(iR) := (color(iA))*pPixel(iR) + (255 - color(iA)+1)* color(iR);
+	 		pPixel(iG) := (color(iA))*pPixel(iG) + (255 - color(iA)+1)* color(iG);
+			pPixel(iB) := (color(iA))*pPixel(iB) + (255 - color(iA)+1)* color(iB); 
+		end if;
    end;
 
    procedure RedrawWindow(	Window		: ImagePtr;

@@ -57,7 +57,7 @@ package body Ada_SDL_Main is
     Cour            : PointPtr ;
     Diff            : Integer ;
     ClipRect        : RectanglePtr ;
-    Bluetran        : Pixel   ;
+	Greentran		: Pixel					:= (0,0,0,0);
 
 	Zen				: Nirvana;
   begin
@@ -88,11 +88,13 @@ package body Ada_SDL_Main is
     red(iR)         := 255;
     blue(iB)        := 255;
 	green(iG)		:= 255;
+	Greentran(iG)	:= 255;
     if (iA /= -1) then
       red(iA)       := 255;
       blue(iA)      := 255;
 	  green(iA)		:= 255;
       black(iA)     := 255;
+	  Greentran(iA)	:= 125;
     end if;
 
     -- Prepare to draw in the window: get exclusive access to its memory,
@@ -137,7 +139,7 @@ package body Ada_SDL_Main is
     myImage.height    := height;
 
     myImagePtr        := new Image'(myImage) ;
-    ClipRect          := new Rectangle'((70,30,null),(90,90,null)) ;
+--    ClipRect          := new Rectangle'((70,30,null),(90,90,null)) ;
 
 	p5	:=	new point'(120,170,null);
 	p4  :=  new point'(90,90, null);
@@ -145,33 +147,25 @@ package body Ada_SDL_Main is
 	p2	:=  new	point'(90,50,p3);
 	p1	:=  new point'(50,50,p2);
     Cour:=  new Point'(50,50,null) ;
-    for I in 0..20 loop
-       Diff:= 100-10*(I/2) ;
-       if (I mod 4) = 0 then
-          Cour:= new Point'(Cour.X+Diff,Cour.Y,Cour) ;
-       elsif (I mod 4) = 1 then
-          Cour:= new Point'(Cour.X,Cour.Y+Diff,Cour) ;
-       elsif (I mod 4) = 2 then
-          Cour:= new Point'(Cour.X-Diff,Cour.Y,Cour) ;
-       else
-          Cour:= new Point'(Cour.X,Cour.Y-Diff,Cour) ;
-       end if ;
-    end loop ;
 
-    --function Transparence(Backgr,Color:in out Pixel) return Pixel is
-    --begin
-       --Color(iR):= ;
-       --Color(iG):= ;
-       --Color(iB):= ;
-       --return Color ;
-    --end Transparence ;
-
-
+--	for I in 0..20 loop
+--       Diff:= 100-10*(I/2) ;
+--       if (I mod 4) = 0 then
+--          Cour:= new Point'(Cour.X+Diff,Cour.Y,Cour) ;
+--       elsif (I mod 4) = 1 then
+--          Cour:= new Point'(Cour.X,Cour.Y+Diff,Cour) ;
+--       elsif (I mod 4) = 2 then
+--          Cour:= new Point'(Cour.X-Diff,Cour.Y,Cour) ;
+--       else
+--          Cour:= new Point'(Cour.X,Cour.Y-Diff,Cour) ;
+--       end if ;
+--    end loop ;
 
     --DrawLine (myImagePtr, 50, 200, 150, 450, Bluetran);
     --DrawLine (myImagePtr, 70, 200, 170, 450, Blue);
     --Polyline(myImagePtr,p1,Blue) ;
-	Polygone(myImagePtr,p1,Green) ;
+	ClipRect := new Rectangle'((45,45, null),(90,90, null)); 
+	Polygone(myImagePtr,p1,Greentran) ;
 
     -- Release exclusive access to the window's pixel memory, tell the system to
     --  update the entire window on the screen.
@@ -231,17 +225,23 @@ package body Ada_SDL_Main is
 
         Ada_SDL_GetMouseMotionEventParams (event, buttonStates, x, y, xrel, yrel);
 
-		CLipRect.bottomRight := (Integer(x),Integer(y), null);
+		CLipRect.bottomRight := (Integer(x)+50,Integer(y)+50, null);
 		ClipRect.topLeft := (Integer(x) - Integer(xrel), Integer(y)- Integer(yrel), null);
 	
 		RedrawWindow(myImagePtr,Zen, Black,ClipRect);
 
-		m5.all	:=	(120,170,null);
-		m4.all  :=  (140,165,p5);
-		m3.all	:=  (Integer(x),Integer(y)-12,null);
-		m2.all	:=  (Integer(x)+12,Integer(y),m3);
+		SDL_UnlockSurface (surface);
+		SDL_UpdateRect (surface);
+
+
+		m5.all	:=	(Integer(x)+3,Integer(y)+9,null);
+		m4.all  :=  (Integer(x)+5,Integer(y)+11,m5);
+		m3.all	:=  (Integer(x)+3,Integer(y)+6,m4);
+		m2.all	:=  (Integer(x)+6,Integer(y)+6,m3);
 		m1.all	:=  (integer(x),Integer(y),m2);
 
+--		clipRect.topLeft := (1,1, null);
+--		ClipRect.bottomRight :=(width, height, null);
 
 		Polygone(myImagePtr,m1,Blue) ;
 	   
