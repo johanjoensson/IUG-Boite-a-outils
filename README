@@ -1,4 +1,18 @@
 These are the source files for all student made procedures, if you can't use them you probably shouldn't have downloaded them.
 
-Polygone is not exactly finished, there are still some minor kinks to work out. But I hope that it will work well enough.
+To download simpl use:
+git clone git://github.com/johanjoensson/IUG-Boite-a-outils.git 
 
+Afterwards you should only need to use
+git pull
+
+in order to get the latest updates.
+
+
+I consider Polygone, Polyline and Drawline to be finished from now on, changes may be commited, but the focus from now on will be user interaction.
+
+If you want to make changes and contribute to the code then send me the files containing your changes and I will add them to the repository. 
+If you want to be able to commit changes directly to the repository yourself then contact me and maybe I can add your ssh-key so that you can upload files yourself.
+
+
+/Johan Jönsson
