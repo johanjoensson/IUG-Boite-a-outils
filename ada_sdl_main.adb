@@ -112,6 +112,12 @@ package body Ada_SDL_Main is
       end loop;
     end loop;
 
+	p4  :=  new point'(1, height, null);
+	p3	:=  new point'(width,height,p4);
+	p2	:=  new	point'(width,1,p3);
+	p1	:=  new point'(1,1,p2);
+	
+	Zen(Canvas) := new shape'(p1, black, null);
     -- Draw a big red rectangle in the window, leaving only a border of <margin> black pixels
     --  on every sides.
 
@@ -127,6 +133,11 @@ package body Ada_SDL_Main is
       lines         := lines + ptrdiff_t (width);
     end loop;
 
+	p4  := new point'(20, height - offset, null);
+	p3	:= new point'(width - offset, height - offset,p4);
+	p2	:= new point'(width - offset,20,p3);
+	p1	:= new point'(20 ,20,p2);
+	zen(Canvas) := new shape'(p1, red, null);
     -- Fill-in an Image record in order to all the "Ex_DrawLine" drawing primitive,
     --  then draw a line.
 
@@ -166,6 +177,12 @@ package body Ada_SDL_Main is
     --Polyline(myImagePtr,p1,Blue) ;
 	ClipRect := new Rectangle'((45,45, null),(90,90, null)); 
 	Polygone(myImagePtr,p1,Greentran) ;
+	Zen(Polygone) := new Shape'(p1,Greentran, null);
+	p3	:=  new point'(80,90,null);
+	p2	:=  new	point'(120,50,p3);
+	p1	:=  new point'(80,50,p2);
+	Polygone(myImagePtr,p1,Greentran) ;
+	--Zen(Polygone).next := new Shape'(p1,Greentran, null);
 
     -- Release exclusive access to the window's pixel memory, tell the system to
     --  update the entire window on the screen.
@@ -208,9 +225,10 @@ package body Ada_SDL_Main is
 
 		if key = SDLK_p then
 			res := SDL_LockSurface (surface);
-			Zen(Polygone) := new Shape'(p1, null);
+			Zen(Polygone).next := new Shape'(p1,blue, null);
 			Polygone(myImagePtr,p1,Blue) ;
---			RedrawWindow(myImagePtr,Zen, Black,((90, 90, null), (150, 150, null)));
+			ClipRect := new Rectangle'((90, 90, null), (150, 150, null));
+--			RedrawWindow(myImagePtr,Zen, Black, ClipRect);
 			SDL_UnlockSurface (surface);
 			SDL_UpdateRect (surface);
 
@@ -240,8 +258,8 @@ package body Ada_SDL_Main is
 		m2.all	:=  (Integer(x)+6,Integer(y)+6,m3);
 		m1.all	:=  (integer(x),Integer(y),m2);
 
---		clipRect.topLeft := (1,1, null);
---		ClipRect.bottomRight :=(width, height, null);
+		clipRect.topLeft := (1,1, null);
+		ClipRect.bottomRight :=(width, height, null);
 
 		Polygone(myImagePtr,m1,Blue) ;
 	   

@@ -507,46 +507,52 @@ package body Gr_Shapes is
 							Clipper		: RectanglePtr) is
 
 		pPixel	: PixelPtr	:= Window.basePixel;
-		cour	: PointPtr;
+		PCour	: PointPtr;
+		SCour	: ShapePtr;
+		nullPixel : Pixel := (0,0,0,0);
    begin
 
 	   pPixel:= Window.basePixel + ptrdiff_t (Window.width * Clipper.topLeft.Y + Clipper.topLeft.X);
 
 	   for y in Clipper.topLeft.Y..Clipper.bottomRight.Y loop
 		   for x in Clipper.topLeft.X..Clipper.bottomRight.X loop
-			   pPixel.all := (0,0,0,0);
+			   PaintPixel(Window,pPixel,pixelValue);
 			   Increment(pPixel);
 		   end loop;
-  		   pPixel:= Window.basePixel + ptrdiff_t (Window.width * y + Clipper.topLeft.x);
+ 		   pPixel:= Window.basePixel + ptrdiff_t (Window.width * y + Clipper.topLeft.x);
 	   end loop;
 
 	   for i in OBJECT loop
-		   cour := null;
+		   PCour := null;
+		   SCour := TabObj(i);
 		   case i is
 			   when Line =>
-				   if TabObj(i) /= null then
-					   cour := TabObj(i).PStart;
-					   while cour /= null loop
-						   DrawLine(Window, cour, (0, 255, 0, 0));
-						   cour := cour.next;
+				   while SCour /= null loop
+					   PCour := TabObj(i).PStart;
+					   while PCour /= null loop
+						   DrawLine(Window, PCour, TabObj(i).Color, Clipper);
+						   PCour := PCour.next;
 					   end loop;
-				   end if;
+					   SCour := SCour.next;
+				   end loop;
 			   when Polyline =>
-				   if TabObj(i) /= null then
-					   cour := TabObj(i).PStart;
-					   while cour /= null loop
-						   Polyline(Window, Cour, (0, 255, 0, 0));
-						   cour := cour.next;
+				   while SCour /= null loop
+					   PCour := TabObj(i).PStart;
+					   while PCour /= null loop
+						   Polyline(Window, PCour, TabObj(i).Color, Clipper);
+						   PCour := PCour.next;
 					   end loop;
-				   end if;
-			   when Polygone =>
-				   if TabObj(i) /= null then
-					   cour := TabObj(i).PStart;
-					   while cour /= null loop
-						   Polygone(Window, Cour, (0, 255, 0, 0));
-						   cour := cour.next;
+					   SCour := SCour.next;
+				   end loop;
+			   when Canvas|Polygone|Toolglass =>
+				   while SCour /= null loop
+					   PCour := TabObj(i).PStart;
+					   while PCour /= null loop
+						   Polygone(Window, PCour, TabObj(i).Color, Clipper);
+						   PCour := PCour.next;
 					   end loop;
-				   end if;
+					   SCour := SCour.next;
+				   end loop;
 		   end case;
 	   end loop;
    end RedrawWindow;

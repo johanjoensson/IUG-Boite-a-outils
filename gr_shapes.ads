@@ -80,13 +80,14 @@ package Gr_Shapes is
    pragma inline (PaintPixel);
 
 
-   type OBJECT is (Line, Polyline, Polygone);
+   type OBJECT is (Canvas,Line, Polyline, Polygone, Toolglass);
 
    type Shape;
    type ShapePtr is access all Shape;
 
    type Shape is record
 	   PStart	: PointPtr;
+	   Color	: Pixel;
 	   next		: ShapePtr;
    end record;
 
