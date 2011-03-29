@@ -9,7 +9,6 @@ with
   Ada_SDL_Init, Ada_SDL_Video, Ada_SDL_Event, Ada_SDL_Mouse, Ada_SDL_Keyboard,
   Ada_ManyMouse,
   Gr_Shapes, Example_Package;
-
 use
   Ada.Text_IO, Interfaces.C,
   Ada_SDL_Init, Ada_SDL_Video, Ada_SDL_Event, Ada_SDL_Mouse, Ada_SDL_Keyboard,
@@ -53,13 +52,15 @@ package body Ada_SDL_Main is
 
     myImagePtr      : ImagePtr;
     P1,P2,P3,P4,P5,P6  : PointPtr ;
-	m1,m2,m3,m4,m5	: PointPtr ;
-    Cour            : PointPtr ;
+	m1,m2,m3,m4,m5,m6,m7	: PointPtr ;
+	mx, my, mxrel, myrel	: Integer ;
+    Cour, suiv, Tmp          : PointPtr ;
     Diff            : Integer ;
     ClipRect        : RectanglePtr ;
 	Greentran		: Pixel					:= (0,0,0,0);
 
 	Zen				: Nirvana;
+
   begin
 
     -- Initialize the ManyMouse package if required.
@@ -116,8 +117,9 @@ package body Ada_SDL_Main is
 	p3	:=  new point'(width,height,p4);
 	p2	:=  new	point'(width,1,p3);
 	p1	:=  new point'(1,1,p2);
-	
-	Zen(Canvas) := new shape'(p1, black, null);
+	cour := p1;
+	insert_Shape(Zen(Canvas), new shape'(p1, Black, null));
+
     -- Draw a big red rectangle in the window, leaving only a border of <margin> black pixels
     --  on every sides.
 
@@ -133,12 +135,13 @@ package body Ada_SDL_Main is
       lines         := lines + ptrdiff_t (width);
     end loop;
 
-	p4  := new point'(20, height - offset, null);
-	p3	:= new point'(width - offset, height - offset,p4);
-	p2	:= new point'(width - offset,20,p3);
-	p1	:= new point'(20 ,20,p2);
-	zen(Canvas) := new shape'(p1, red, null);
-    -- Fill-in an Image record in order to all the "Ex_DrawLine" drawing primitive,
+	p4  := new point'(offset-1, height - offset, null);
+	p3	:= new point'(width -1 - offset, height - offset,p4);
+	p2	:= new point'(width -1 - offset,offset,p3);
+	p1	:= new point'(offset-1 ,offset,p2);
+	insert_shape(Zen(Canvas), new shape'(p1, red, null));
+	
+   	-- Fill-in an Image record in order to all the "Ex_DrawLine" drawing primitive,
     --  then draw a line.
 
     myImage.basePixel := Ada_SDL_GetPixelPtr (surface);
@@ -152,12 +155,12 @@ package body Ada_SDL_Main is
     myImagePtr        := new Image'(myImage) ;
 --    ClipRect          := new Rectangle'((70,30,null),(90,90,null)) ;
 
-	p5	:=	new point'(120,170,null);
-	p4  :=  new point'(90,90, null);
-	p3	:=  new point'(50,90,p4);
-	p2	:=  new	point'(90,50,p3);
-	p1	:=  new point'(50,50,p2);
-    Cour:=  new Point'(50,50,null) ;
+--	p5.all	:=	(120,170,null);
+	p4  := new point'(90,90, null);
+	p3	:= new point'(50,90,p4);
+	p2	:= new point'(90,50,p3);
+	p1	:= new point'(50,50,p2);
+--    Cour:=  (50,50,null) ;
 
 --	for I in 0..20 loop
 --       Diff:= 100-10*(I/2) ;
@@ -175,14 +178,14 @@ package body Ada_SDL_Main is
     --DrawLine (myImagePtr, 50, 200, 150, 450, Bluetran);
     --DrawLine (myImagePtr, 70, 200, 170, 450, Blue);
     --Polyline(myImagePtr,p1,Blue) ;
-	ClipRect := new Rectangle'((45,45, null),(90,90, null)); 
 	Polygone(myImagePtr,p1,Greentran) ;
-	Zen(Polygone) := new Shape'(p1,Greentran, null);
+
+	insert_shape(Zen(Polygone), new Shape'(p1,Greentran, null));
 	p3	:=  new point'(80,90,null);
-	p2	:=  new	point'(120,50,p3);
+	p2	:=  new point'(120,50,p3);
 	p1	:=  new point'(80,50,p2);
 	Polygone(myImagePtr,p1,Greentran) ;
-	--Zen(Polygone).next := new Shape'(p1,Greentran, null);
+	insert_shape(Zen(Polygone),  new Shape'(p1,Greentran, null));
 
     -- Release exclusive access to the window's pixel memory, tell the system to
     --  update the entire window on the screen.
@@ -198,11 +201,15 @@ package body Ada_SDL_Main is
     --  loop infinitely by waiting for a new event, and handling it.
 
     event := Ada_SDL_AllocateEvent;
-	m5	:=	new point'(120,170,null);
-	m4  :=  new point'(140,165,p5);
-	m3	:=  new point'(110,75,p4);
-	m2	:=  new	point'(120,150,p3);
-	m1	:=  new point'(92,90,p2);
+
+	m7	:=	new point;
+	m6	:=	new point;
+	m5	:=	new point;
+	m4  :=  new point;
+	m3	:=  new point;
+	m2	:=  new	point;
+	m1	:=  new point;
+	Cliprect := new Rectangle;
 
     loop
       res := SDL_WaitEvent (event);
@@ -225,9 +232,8 @@ package body Ada_SDL_Main is
 
 		if key = SDLK_p then
 			res := SDL_LockSurface (surface);
-			Zen(Polygone).next := new Shape'(p1,blue, null);
 			Polygone(myImagePtr,p1,Blue) ;
-			ClipRect := new Rectangle'((90, 90, null), (150, 150, null));
+--			ClipRect := new Rectangle'((90, 90, null), (150, 150, null));
 --			RedrawWindow(myImagePtr,Zen, Black, ClipRect);
 			SDL_UnlockSurface (surface);
 			SDL_UpdateRect (surface);
@@ -242,9 +248,13 @@ package body Ada_SDL_Main is
         -- The mouse moved
 
         Ada_SDL_GetMouseMotionEventParams (event, buttonStates, x, y, xrel, yrel);
+		mx := integer(x);
+		my := integer(y);
+		mxrel := integer(xrel);
+		myrel := integer(yrel);
 
-		CLipRect.bottomRight := (Integer(x)+50,Integer(y)+50, null);
-		ClipRect.topLeft := (Integer(x) - Integer(xrel), Integer(y)- Integer(yrel), null);
+		CLipRect.bottomRight := (mx+20, my+20, null);
+		ClipRect.topLeft := (mx - mxrel - 10, my- myrel - 10, null);
 	
 		RedrawWindow(myImagePtr,Zen, Black,ClipRect);
 
@@ -252,16 +262,18 @@ package body Ada_SDL_Main is
 		SDL_UpdateRect (surface);
 
 
-		m5.all	:=	(Integer(x)+3,Integer(y)+9,null);
-		m4.all  :=  (Integer(x)+5,Integer(y)+11,m5);
-		m3.all	:=  (Integer(x)+3,Integer(y)+6,m4);
-		m2.all	:=  (Integer(x)+6,Integer(y)+6,m3);
-		m1.all	:=  (integer(x),Integer(y),m2);
+		m7.all	:=	(mx, my +12, null);
+		m6.all	:=	(mx +2, my +9, m7);
+		m5.all	:=	(mx+4, my +11,m6);
+		m4.all  :=  (mx+6,my+10,m5);
+		m3.all	:=  (mx+4,my+8,m4);
+		m2.all	:=  (mx+6,my+6,m3);
+		m1.all	:=  (mx,my,m2);
 
 		clipRect.topLeft := (1,1, null);
 		ClipRect.bottomRight :=(width, height, null);
 
-		Polygone(myImagePtr,m1,Blue) ;
+		Polygone(myImagePtr,m1,Blue, ClipRect) ;
 	   
 		SDL_UnlockSurface (surface);
 		SDL_UpdateRect (surface);

@@ -3,6 +3,7 @@ use   Ada_SDL_Video, Interfaces.C, Ada_SDL_Video.PixelPtrPkg, Ada.Text_IO, Ada.I
 
 package body Gr_Shapes is
    procedure Liberer is new Ada.Unchecked_Deallocation (Cote,CotePtr);
+   procedure Liberer is new Ada.Unchecked_Deallocation (Point,PointPtr);
 
    function Min(A,B : Integer) return Integer is
    begin
@@ -494,13 +495,28 @@ package body Gr_Shapes is
 	   iA	: Integer := currentImage.iA;
    begin
 	   -- update all the values, one channel at a time
-		if color(iA) /= 0 then
+		if color(iA) /= 0 and then color(iA) /= 255 then
 	 		pPixel(iR) := (color(iA))*pPixel(iR) + (255 - color(iA)+1)* color(iR);
 	 		pPixel(iG) := (color(iA))*pPixel(iG) + (255 - color(iA)+1)* color(iG);
 			pPixel(iB) := (color(iA))*pPixel(iB) + (255 - color(iA)+1)* color(iB); 
+		elsif color(iA) = 255 then
+			pPixel.all:=color;
 		end if;
    end;
 
+   procedure insert_shape(Shape_Table: in out ShapePtr; Shape: in ShapePtr) is
+	   curr : ShapePtr := Shape_Table;
+   begin
+	   Shape.next := null;
+	   if Shape_Table /= null then
+		   while curr.next /= null loop
+			   curr := curr.next;
+		   end loop;
+		   curr.next := Shape;
+	   else
+		   Shape_Table := Shape;
+	   end if;
+	   end insert_shape;
    procedure RedrawWindow(	Window		: ImagePtr;
 							TabObj		: Nirvana;
 							pixelValue	: Pixel;
@@ -512,47 +528,51 @@ package body Gr_Shapes is
 		nullPixel : Pixel := (0,0,0,0);
    begin
 
-	   pPixel:= Window.basePixel + ptrdiff_t (Window.width * Clipper.topLeft.Y + Clipper.topLeft.X);
+--	   pPixel:= Window.basePixel + ptrdiff_t (Window.width * Clipper.topLeft.Y + Clipper.topLeft.X);
 
-	   for y in Clipper.topLeft.Y..Clipper.bottomRight.Y loop
-		   for x in Clipper.topLeft.X..Clipper.bottomRight.X loop
-			   PaintPixel(Window,pPixel,pixelValue);
-			   Increment(pPixel);
-		   end loop;
- 		   pPixel:= Window.basePixel + ptrdiff_t (Window.width * y + Clipper.topLeft.x);
-	   end loop;
+--	   for y in Clipper.topLeft.Y..Clipper.bottomRight.Y loop
+--		   for x in Clipper.topLeft.X+1..Clipper.bottomRight.X-1 loop
+--			   PaintPixel(Window,pPixel,(0,0,0, 255));
+--			   Increment(pPixel);
+--		   end loop;
+-- 		   pPixel:= Window.basePixel + ptrdiff_t (Window.width * y + Clipper.topLeft.x);
+--	   end loop;
 
 	   for i in OBJECT loop
 		   PCour := null;
 		   SCour := TabObj(i);
 		   case i is
+			   when Canvas =>
+				   while SCour /= null loop
+					   PCour := SCour.PStart;
+					   Polygone(Window, PCour, SCour.Color, Clipper);
+					   SCour := SCour.next;
+				   end loop;
+				   new_line;
+
+
 			   when Line =>
 				   while SCour /= null loop
-					   PCour := TabObj(i).PStart;
-					   while PCour /= null loop
-						   DrawLine(Window, PCour, TabObj(i).Color, Clipper);
-						   PCour := PCour.next;
-					   end loop;
+					   PCour := SCour.PStart;
+					   DrawLine(Window, PCour, TabObj(i).Color, Clipper);
 					   SCour := SCour.next;
 				   end loop;
 			   when Polyline =>
 				   while SCour /= null loop
-					   PCour := TabObj(i).PStart;
-					   while PCour /= null loop
-						   Polyline(Window, PCour, TabObj(i).Color, Clipper);
-						   PCour := PCour.next;
-					   end loop;
+					   PCour :=SCour.PStart;
+					   Polyline(Window, PCour, TabObj(i).Color, Clipper);
 					   SCour := SCour.next;
 				   end loop;
-			   when Canvas|Polygone|Toolglass =>
+			   when Polygone =>
+				   put("Polygone ");
 				   while SCour /= null loop
-					   PCour := TabObj(i).PStart;
-					   while PCour /= null loop
-						   Polygone(Window, PCour, TabObj(i).Color, Clipper);
-						   PCour := PCour.next;
-					   end loop;
+					   put("Loopar igenom lista ");
+					   PCour := SCour.PStart;
+					   Polygone(Window, PCour, SCour.Color, Clipper);
 					   SCour := SCour.next;
 				   end loop;
+				   new_line;
+			   when Toolglass => null;
 		   end case;
 	   end loop;
    end RedrawWindow;

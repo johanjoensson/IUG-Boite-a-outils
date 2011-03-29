@@ -78,7 +78,7 @@ package Gr_Shapes is
 						pPixel			:in out	PixelPtr;
 						color			:in		Pixel);
    pragma inline (PaintPixel);
-
+   
 
    type OBJECT is (Canvas,Line, Polyline, Polygone, Toolglass);
 
@@ -90,6 +90,8 @@ package Gr_Shapes is
 	   Color	: Pixel;
 	   next		: ShapePtr;
    end record;
+
+   procedure insert_shape(Shape_Table: in out ShapePtr; Shape: in ShapePtr);
 
    type Nirvana is array(OBJECT) of ShapePtr;
 
