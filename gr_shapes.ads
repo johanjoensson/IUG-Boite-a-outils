@@ -88,6 +88,7 @@ package Gr_Shapes is
    type Shape is record
 	   PStart	: PointPtr;
 	   Color	: Pixel;
+	   Identifier	: Pixel;
 	   next		: ShapePtr;
    end record;
 
@@ -99,5 +100,7 @@ package Gr_Shapes is
 							TabObj		: Nirvana;
 							pixelValue	: Pixel;
 							Clipper		: RectanglePtr);
+
+ procedure CheckShape(offscreenImage: ImagePtr; x,y: integer);
 
 end Gr_Shapes;

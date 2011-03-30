@@ -1,5 +1,5 @@
-with  Ada_SDL_Video, Interfaces.C, Ada.Text_IO, Ada.Integer_Text_IO, Ada.Unchecked_Deallocation ;
-use   Ada_SDL_Video, Interfaces.C, Ada_SDL_Video.PixelPtrPkg, Ada.Text_IO, Ada.Integer_Text_IO;
+with  Ada_SDL_Video, Interfaces.C, Ada.Text_IO, Ada.Integer_Text_IO, Ada.Unchecked_Deallocation, example_package ;
+use   Ada_SDL_Video, Interfaces.C, Ada_SDL_Video.PixelPtrPkg, Ada.Text_IO, Ada.Integer_Text_IO, example_package;
 
 package body Gr_Shapes is
    procedure Liberer is new Ada.Unchecked_Deallocation (Cote,CotePtr);
@@ -414,8 +414,16 @@ package body Gr_Shapes is
       pPtr: PixelPtr ;
       Final_Y,X, line, XMAx: Integer ;
       Paire: Boolean ;
+	  PClip	: PointPtr:= Points;
    begin
-      InitScanline(Points, Ymin, Ymax);
+	   if ClipRect /= null then
+		   PClip := PolygonClipping(Points, ClipRect);
+		   PDeb := PCLip;
+		   PCour := PClip;
+	   end if;
+
+	   if PCLip /= null then
+	 	   InitScanline(PClip, Ymin, Ymax);
 	  -- Insertion des cotes.
       while PCour.Next /= null loop
          if PCour.Y /= PCour.Next.Y then
@@ -429,37 +437,37 @@ package body Gr_Shapes is
          Table_Des_Cotes(PCour, PDeb, TC(Final_Y));
       end if ;
 	
-	  --Clipping
-	  line := Ymin;
-	  if ClipRect /= null then
-		  -- Trouve la premier scanline
-		  while line < ClipRect.topLeft.y loop 
-			  Table_Des_Cotes_Actifs(TC(line), TCA);
-			  Update_Cotes(TCA, line+1);
-			  line := line +1 ;
-		  end loop;
-		  Ymin := Max(Ymin, Cliprect.topLeft.Y);
-		  Ymax := Min(Ymax, ClipRect.bottomRight.Y);
-	  end if;
-
+-- 	  --Clipping
+-- 	  line := Ymin;
+-- 	  if ClipRect /= null then
+--       -- Trouve la premier scanline
+-- 		  while line < ClipRect.topLeft.y loop 
+-- 			  Table_Des_Cotes_Actifs(TC(line), TCA);
+-- 			  Update_Cotes(TCA, line+1);
+-- 			  line := line +1 ;
+-- 		  end loop;
+-- 		  Ymin := Max(Ymin, Cliprect.topLeft.Y);
+-- 		  Ymax := Min(Ymax, ClipRect.bottomRight.Y);
+-- 	  end if;
+ 
 	  -- Remplissage de poygone
       for y in Ymin ..Ymax-1 loop
 		  -- mets a jour le TCA
 		  Table_Des_Cotes_Actifs(TC(y), TCA);
          Cour := TCA;
-		 if ClipRect /= null then
-			 X:= Max(Cour.X_Ymin, ClipRect.topLeft.X) +1 ;
-		 else
+--		 if ClipRect /= null then
+--			 X:= Max(Cour.X_Ymin, ClipRect.topLeft.X) +1 ;
+--		 else
 			 X := Cour.X_Ymin;
-		 end if;
+--		 end if;
          pPtr:= Image.basePixel + ptrdiff_t (Image.width * y + x);
          Paire:= False ;
          while Cour.Next /= null loop
-			 if ClipRect /= null then
-				 XMax := Min(cour.next.X_Ymin, ClipRect.bottomRight.X);
-			 else
+--			 if ClipRect /= null then
+--				 XMax := Min(cour.next.X_Ymin, ClipRect.bottomRight.X);
+--			 else
 				 XMax := cour.next.X_Ymin;
-			 end if;
+--			 end if;
             if not Paire then
 				-- Paint the pixels.
                while X <= XMax loop
@@ -481,6 +489,7 @@ package body Gr_Shapes is
          end loop ;
          Update_Cotes(TCA, Y+1);
       end loop;
+   end if;
    end Polygone ;
 
    -- Procedure for painting a pixel with regard to alpha values.
@@ -564,9 +573,7 @@ package body Gr_Shapes is
 					   SCour := SCour.next;
 				   end loop;
 			   when Polygone =>
-				   put("Polygone ");
 				   while SCour /= null loop
-					   put("Loopar igenom lista ");
 					   PCour := SCour.PStart;
 					   Polygone(Window, PCour, SCour.Color, Clipper);
 					   SCour := SCour.next;
@@ -576,5 +583,19 @@ package body Gr_Shapes is
 		   end case;
 	   end loop;
    end RedrawWindow;
+
+   procedure CheckShape(offscreenImage: ImagePtr; x,y: integer) is
+	   pPtr : pixelPtr;
+   begin
+
+         pPtr:= offscreenImage.basePixel + ptrdiff_t (offscreenImage.width * y + x);
+		 if pPtr.all = (1,1,1,255) then
+			 put_line("Korrekt!");
+			 put(integer'image(integer(pPtr.all(0))));
+		 else
+			 put_line("Inte korrekt!");
+			 put(integer'image(integer(pPtr.all(0))));
+		 end if;
+   end CheckShape;
 
 end Gr_Shapes;
