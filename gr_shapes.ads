@@ -30,26 +30,6 @@ package Gr_Shapes is
 
    type RectanglePtr is access all Rectangle;
 
-   type Cote;
-   type CotePtr is access all Cote;
-
-   type Cote is record
-      Ymax, X_Ymin    : Integer;
-      Dx, Dy          : Integer;
-      E               : Integer;
-      Next            : CotePtr;
-   end record;
-
-   type TableCotes is array (Integer range <>) of CotePtr ;
-
-   --
-   -- Draw line
-
-   procedure DrawLine (anImage                 : ImagePtr;
-                       points				   : PointPtr;
-                       color                   : Pixel;
-                       clipRect   : RectanglePtr :=null) ;
-
    --
    -- Draw in the image <image> clipped by the rectangle <clipRect>
    --   the polyline defined by the points list <points>
@@ -60,7 +40,7 @@ package Gr_Shapes is
      (image      : ImagePtr;
       points     : PointPtr;
       pixelValue : Pixel;
-      clipRect   : RectanglePtr := null   );
+      clipRect   : RectanglePtr     := NULL);
 
    --
    -- Draw in the image <image> clipped by the rectangle <clipRect>
@@ -73,34 +53,5 @@ package Gr_Shapes is
       points     : PointPtr;
       pixelValue : Pixel;
       clipRect   : RectanglePtr     := NULL);
-
-   procedure PaintPixel(currentImage	:in		ImagePtr;
-						pPixel			:in out	PixelPtr;
-						color			:in		Pixel);
-   pragma inline (PaintPixel);
-   
-
-   type OBJECT is (Canvas,Line, Polyline, Polygone, Toolglass);
-
-   type Shape;
-   type ShapePtr is access all Shape;
-
-   type Shape is record
-	   PStart	: PointPtr;
-	   Color	: Pixel;
-	   Identifier	: Pixel;
-	   next		: ShapePtr;
-   end record;
-
-   procedure insert_shape(Shape_Table: in out ShapePtr; Shape: in ShapePtr);
-
-   type Nirvana is array(OBJECT) of ShapePtr;
-
-	procedure RedrawWindow(	Window		: ImagePtr;
-							TabObj		: Nirvana;
-							pixelValue	: Pixel;
-							Clipper		: RectanglePtr);
-
- procedure CheckShape(offscreenImage: ImagePtr; x,y: integer);
 
 end Gr_Shapes;

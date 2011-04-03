@@ -114,7 +114,7 @@ end Inside;
           Senti:PointPtr;
         begin
            if S=null then
-              Put_Line("S Est null");
+--              Put_Line("S Est null");
 			  return;
            end if;
 
@@ -124,36 +124,36 @@ end Inside;
           Senti:=new Point;
           Tail:=Senti;
           while P/=null loop
-             Put_Line("P.X= " & Integer'Image(P.X) & "P.Y=" & Integer'Image(P.Y));
-             Put_Line("S.X= " & Integer'Image(S.X) & "S.Y=" & Integer'Image(S.Y));
+--             Put_Line("P.X= " & Integer'Image(P.X) & "P.Y=" & Integer'Image(P.Y));
+--             Put_Line("S.X= " & Integer'Image(S.X) & "S.Y=" & Integer'Image(S.Y));
              if Inside(P,ClipRect,TheBoundary) then
                 if Inside(S,ClipRect,TheBoundary) then
                    Tail.Next:=new Point'(P.X,P.Y,null);
                    Tail:=Tail.Next;
-                   Put_Line(Integer'Image(Tail.Y));
+--                   Put_Line(Integer'Image(Tail.Y));
                 else
                    Intersect(ClipRect,S,P,TheBoundary,I);
                    Tail.Next:=I; --insert intersection if s outside and P inside
                    Tail:=Tail.Next;
                    Tail.Next:=new Point'(P.X,P.Y,null); --insert P
                    Tail:=Tail.Next;
-                   Put_Line(Integer'Image(Tail.Y));
+--                   Put_Line(Integer'Image(Tail.Y));
                 end if;
 
              elsif Inside(S,ClipRect,TheBoundary) then
                 Intersect(ClipRect,S,P,TheBoundary,I);
                 Tail.Next:=I;
                 Tail:=Tail.Next;  --P is outside so we insert only the intersection with the Boundary
-                Put_Line(Integer'Image(Tail.Y));
+--                Put_Line(Integer'Image(Tail.Y));
              --nothing to do if both S and P are outside
              end if;
              S:=P;
              P:=P.Next;
           end loop;
-          if Senti.Next=null then
-             Put_Line("pb");
-          end if;
-
+--          if Senti.Next=null then
+--              Put_Line("pb");
+--           end if;
+-- 
           PolygonClip:=Senti.Next;
 --          Put_Line("SuthH fini, PolygonClip.Y=" & Integer'Image(PolygonClip.Y));
           Liberer(Senti);

@@ -8,12 +8,12 @@ with
   Ada.Text_IO, Interfaces.C,
   Ada_SDL_Init, Ada_SDL_Video, Ada_SDL_Event, Ada_SDL_Mouse, Ada_SDL_Keyboard,
   Ada_ManyMouse,
-  Gr_Shapes, Example_Package;
+  Gr_Shapes, Example_Package, Event_Handling;
 use
   Ada.Text_IO, Interfaces.C,
   Ada_SDL_Init, Ada_SDL_Video, Ada_SDL_Event, Ada_SDL_Mouse, Ada_SDL_Keyboard,
   Ada_ManyMouse,
-  Gr_Shapes, Example_Package;
+  Gr_Shapes, Example_Package, Event_Handling;
 
 use
   Ada_SDL_Video.PixelPtrPkg;
@@ -128,7 +128,7 @@ package body Ada_SDL_Main is
 	p2	:=  new	point'(width,1,p3);
 	p1	:=  new point'(1,1,p2);
 	cour := p1;
-	insert_Shape(Zen(Canvas), new shape'(p1, Black, (0,0,0,0), null));
+	insert_Shape(Zen(Canvas), new shape'(p1, Black, (0,0,0,255), null));
 
     -- Draw a big red rectangle in the window, leaving only a border of <margin> black pixels
     --  on every sides.
@@ -149,7 +149,7 @@ package body Ada_SDL_Main is
 	p3	:= new point'(width -1 - offset, height - offset,p4);
 	p2	:= new point'(width -1 - offset,offset,p3);
 	p1	:= new point'(offset-1 ,offset,p2);
-	insert_shape(Zen(Canvas), new shape'(p1, red, (0,0,0,1), null));
+	insert_shape(Zen(Canvas), new shape'(p1, red, (1,0,0,255), null));
 	
    	-- Fill-in an Image record in order to all the "Ex_DrawLine" drawing primitive,
     --  then draw a line.
@@ -181,15 +181,16 @@ package body Ada_SDL_Main is
 	p1	:= new point'(50,50,p2);
 	
 	Polygone(myImagePtr,p1,Greentran) ;
-	polygone(offScreenImagePtr, p1, (1,1,1,255));
+	polygone(offScreenImagePtr, p1, (4,0,0,255));
 
-	insert_shape(Zen(Polygone), new Shape'(p1,Greentran, (0, 0, 0, 1), null));
+	insert_shape(Zen(Polygone), new Shape'(p1,Greentran, (4, 0, 0, 255), null));
 	
 	p3	:=  new point'(80,90,null);
 	p2	:=  new point'(120,50,p3);
 	p1	:=  new point'(80,50,p2);
 	Polygone(myImagePtr,p1,Greentran) ;
-	insert_shape(Zen(Polygone),  new Shape'(p1,Greentran, (0,0,0,2), null));
+	Polygone(offscreenImagePtr,p1,(1,0,0,255)) ;
+	insert_shape(Zen(Polygone),  new Shape'(p1,Greentran, (1,0,0,255), null));
 
     -- Release exclusive access to the window's pixel memory, tell the system to
     --  update the entire window on the screen.
@@ -239,8 +240,8 @@ package body Ada_SDL_Main is
 		if key = SDLK_p then
 			res := SDL_LockSurface (surface);
 			Polygone(myImagePtr,p1,Blue) ;
---			ClipRect := new Rectangle'((90, 90, null), (150, 150, null));
---			RedrawWindow(myImagePtr,Zen, Black, ClipRect);
+			Polygone(offscreenImagePtr,p1,(3,0,0,255)) ;
+			insert_shape(Zen(Polygone),  new Shape'(p1,Blue, (3,0,0,255), null));
 			SDL_UnlockSurface (surface);
 			SDL_UpdateRect (surface);
 
@@ -292,8 +293,8 @@ package body Ada_SDL_Main is
 
           -- We are only handling one mouse.
 
-          Put_Line ("Motion, x = " & Integer'Image (Integer (x)) & ", y = " & Integer'Image (Integer (y))
-                     & ", xrel = " & Integer'Image (Integer (xrel)) & ", yrel = " & Integer'Image (Integer (yrel)));
+--          Put_Line ("Motion, x = " & Integer'Image (Integer (x)) & ", y = " & Integer'Image (Integer (y))                     & ", xrel = " & Integer'Image (Integer (xrel)) & ", yrel = " & Integer'Image (Integer (yrel)));
+			mx:=mx;
         else
 
           -- We are using multiple mice, loop for all mice, reading and displaying their state for each.
