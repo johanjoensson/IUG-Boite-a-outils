@@ -21,10 +21,12 @@ package Event_Handling is
 
 	procedure RedrawWindow(	Window		: ImagePtr;
 							TabObj		: Nirvana;
-							pixelValue	: Pixel;
 							Clipper		: RectanglePtr);
 
- procedure CheckShape(offscreenImage: ImagePtr; x,y: integer);
+	
+	procedure findShape(Id: PixelPtr; Scene: in out Nirvana ; Res : out ShapePtr);
+
+ procedure CheckShape(offscreenImage: ImagePtr; x,y: integer; Zen : in out Nirvana; res : out ShapePtr);
 
 end Event_Handling;
 

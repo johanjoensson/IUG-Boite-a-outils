@@ -24,7 +24,7 @@ package body Ada_SDL_Main is
     surface         : SDL_SurfacePtr;                         -- The main window
     event           : SDL_EventPtr;                           -- Where to store details of the received event
     res             : Integer             := 0;               -- Error code returned by some functions (0 = no error)
-    width           : Integer             := 640;             -- Width of the main window
+    width           : Integer             := 800;             -- Width of the main window
     height          : Integer             := 480;             -- Height of the main window
     iR, iG, iB, iA  : Integer;                                -- Channel indices: where is "red", "green", ... in the pixel ?
 
@@ -65,6 +65,9 @@ package body Ada_SDL_Main is
 	offScreenImagePtr	: ImagePtr;
 	offPixels		: PixelPtr;
 	mousePoint		: point;
+	moveShape		: Boolean	:= False;
+	ShapeMoved		: ShapePtr;
+	PCurr			: PointPtr;
 
   begin
 
@@ -262,10 +265,11 @@ package body Ada_SDL_Main is
 		mousePoint := (mx-mxrel, my-myrel, null);-- Ancien position de souris
 
 
+		if not moveShape then
 		ClipRect.topLeft := mousePoint; 		
 		CLipRect.bottomRight := (mousePoint.x +12, mousePoint.y+13, null);
 	
-		RedrawWindow(myImagePtr,Zen, Black,ClipRect);
+		RedrawWindow(myImagePtr,Zen, ClipRect);
 
 		SDL_UnlockSurface (surface);
 		SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.X), Sint32 (ClipRect.topLeft.Y), Uint32(12), Uint32(13));
@@ -285,6 +289,41 @@ package body Ada_SDL_Main is
 	   
 		SDL_UnlockSurface (surface);
 		SDL_UpdateRect (surface,Sint32(mx), Sint32 (my), Uint32(12), Uint32(13)) ;
+	  else
+		  -- Update the points in the moved shape
+		  PCurr := ShapeMoved.PStart;
+  
+		  -- Erase offscreen picture
+		  polygone(offScreenImagePtr, ShapeMoved.Pstart, (0,0,0,255));
+		  while PCurr /= null loop
+			 PCurr.X := PCurr.X + mxrel;
+			 PCurr.Y := PCurr.Y + myrel;
+			 PCurr := PCurr.next;
+		  end loop;
+
+		  -- Erase old picture
+		  ClipRect.topLeft := mousePoint;
+		  ClipRect.bottomRight := (mousepoint.x + 50, mousepoint.y + 50, null);
+		  put_line("Erasing old pcture");
+		RedrawWindow(myImagePtr,Zen, ClipRect);
+		put_line("old picture erased");
+
+		SDL_UnlockSurface (surface);
+		SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.X), Sint32 (ClipRect.topLeft.Y), Uint32(50), Uint32(50));
+
+		-- Draw new picture
+
+		Polygone(myImagePtr,PCurr,ShapeMoved.Color) ;
+		--insert_Shape(Zen(Polygone), ShapeMoved);
+		polygone(offScreenImagePtr, ShapeMoved.Pstart, ShapeMoved.Identifier);
+		SDL_UnlockSurface (surface);
+		SDL_UpdateRect (surface,Sint32(mx), Sint32 (my), Uint32(50), Uint32(50)) ;
+
+
+
+
+
+		end if;
 
 
 
@@ -318,10 +357,21 @@ package body Ada_SDL_Main is
         Ada_SDL_GetMouseButtonEventParams (event, eventType, buttonNb, x, y);
 
         if not doManyMouse then
-          Put_Line ("MouseButton, type = " & Integer'Image (Integer (eventType)) & ", buttonNb = " & Integer'Image (Integer (buttonNb))
-                       & ", x = " & Integer'Image (Integer (x)) & ", y = " & Integer'Image (Integer (y)));
-		  CheckShape(offScreenImagePtr, integer(x), integer(y));
-		  
+--          Put_Line ("MouseButton, type = " & Integer'Image (Integer (eventType)) & ", buttonNb = " & Integer'Image (Integer (buttonNb)) & ", x = " & Integer'Image (Integer (x)) & ", y = " & Integer'Image (Integer (y)));
+
+			moveShape := not moveShape;
+			if moveShape and then ShapeMoved = null then
+		  put_line("moveShape = True");
+			  CheckShape(offScreenImagePtr, integer(x), integer(y), Zen, ShapeMoved);
+			  if ShapeMoved = null then
+				  moveShape := false;
+			  end if;
+		  else
+			  put_line("moveShape = False");
+			  ShapeMoved := null;
+			  moveShape := False;
+		  end if;
+
         else
 
           Ada_MM_UpdateMice;
