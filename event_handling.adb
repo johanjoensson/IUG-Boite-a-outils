@@ -1,5 +1,5 @@
-with Ada_SDL_Video, Interfaces.C, Gr_Shapes, Drawline_Pkg, Ada.Text_Io;
-use Ada_SDL_Video, Ada_SDL_Video.PixelPtrPkg, Interfaces.C, Gr_Shapes, Drawline_Pkg, Ada.Text_Io;
+with Ada_SDL_Video, Interfaces.C, Gr_Shapes, Drawline_Pkg, Aux_Fct, Ada.Text_Io;
+use Ada_SDL_Video, Ada_SDL_Video.PixelPtrPkg, Interfaces.C, Gr_Shapes, Drawline_Pkg, Aux_Fct, Ada.Text_Io;
 
 package body Event_Handling is
 
@@ -119,6 +119,77 @@ package body Event_Handling is
 
 	   end loop;
    end RedrawWindow;
+
+  procedure RedrawOffscreen(	Window		: ImagePtr;
+							TabObj		: Nirvana;
+							Clipper		: RectanglePtr) is
+
+		pPixel	: PixelPtr	:= Window.basePixel;
+		PCour	: PointPtr;
+		CurrLine, CurrPolyline, CurrPolygone	: ShapePtr;
+		lowestPrio, LinePrio, PolyLinePrio,PolygonePrio : Pixel;
+   begin
+	   -- Draw the "Canvas" (Background)
+	   CurrPolygone := TabObj(Canvas);
+	   while CurrPolygone /= null loop
+		   PCour := CurrPolygone.PStart;
+		   Polygone(Window, PCour, (0,0,0,255), Clipper);
+		   CurrPolygone := CurrPolygone.next;
+	   end loop;
+
+	   -- Redraw all objects in order of priority (Identifier)
+	   CurrLine := TabObj(Line);
+	   CurrPolyLine := TabObj(Polyline);
+	   CurrPolygone := TabObj(Polygone);
+	   PCour := null;
+
+	   while not (CurrLine = null and CurrPolyLine = null and CurrPolygone = null) loop
+		   -- When one of our pointers does not point anywhere (it is null)
+		   -- give it an identifier > any other identifier
+		   Put_line("Loop!!!");
+		   if CurrLine = null then
+			   LinePrio := (255, 255, 255, 0);
+		   else
+			   LinePrio := CurrLine.Identifier;
+		   end if;
+		  
+		   if CurrPolyLine = null then
+			   PolyLinePrio := (255, 255, 255, 0);
+		   else
+			   PolyLinePrio := CurrPolyLine.Identifier;
+		   end if;
+		  
+		   if CurrPolygone = null then
+			   PolygonePrio := (255, 255, 255, 0);
+		   else
+			   PolygonePrio := CurrPolygone.Identifier;
+		   end if;
+
+		   lowestPrio := lowestPriority(LinePrio, PolyLinePrio, PolygonePrio);
+
+		   if LinePrio = lowestPrio then
+			   put_line(" Linje ");
+			   PCour := CurrLine.PStart;
+			   DrawLine(Window, PCour, CurrLine.Identifier, Clipper);
+			   CurrLine := CurrLine.next;
+		   elsif PolyLinePrio = lowestPrio then
+			   put_line(" Polylinje ");
+			   PCour :=CurrPolyLine.PStart;
+			   Polyline(Window, PCour, CurrPolyLine.Identifier, Clipper);
+			   CurrPolyLine := CurrPolyLine.next;
+		   elsif PolygonePrio = lowestPrio then
+			   put_line(" Polygon ");
+			   PCour :=CurrPolygone.PStart;
+			   Polygone(Window, PCour, CurrPolygone.Identifier, Clipper);
+			   CurrPolygone := CurrPolygone.next;
+		   else
+			   Put_line(" HELVETE!!!!! ");
+		   end if;
+
+
+	   end loop;
+   end RedrawOffscreen;
+
 
    procedure findShape(Id: PixelPtr; Scene: in out Nirvana; res: out ShapePtr) is
 	   -- Locate an object with Identifier Id in the Scene.

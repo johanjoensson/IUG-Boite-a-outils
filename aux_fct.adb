@@ -53,6 +53,21 @@ package body Aux_Fct is
          return False ;
       end if ;
    end Check ;
+
+   procedure X_MinMax (P: in PointPtr; min, max : out integer) is
+	   Tmp : PointPtr := P.next;
+   begin
+ 	   Min := P.X ;
+ 	   Max := P.X ;
+ 	   while Tmp /= null loop
+  		   if Tmp.X < Min then
+   			   Min := Tmp.X ;
+  		   elsif Tmp.Y > Max then
+   			   Max := Tmp.X ;
+  		   end if ;
+  		   Tmp := Tmp.Next ;
+ 	   end loop ;
+   end X_MinMax;
   
 
   ----------------------------------------------------------------------------------------------------------------------

@@ -23,6 +23,10 @@ package Event_Handling is
 							TabObj		: Nirvana;
 							Clipper		: RectanglePtr);
 
+   	procedure RedrawOffscreen(	Window		: ImagePtr;
+							TabObj		: Nirvana;
+							Clipper		: RectanglePtr);
+
 	
 	procedure findShape(Id: PixelPtr; Scene: in out Nirvana ; Res : out ShapePtr);
 

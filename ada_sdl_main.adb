@@ -8,12 +8,12 @@ with
   Ada.Text_IO, Interfaces.C,
   Ada_SDL_Init, Ada_SDL_Video, Ada_SDL_Event, Ada_SDL_Mouse, Ada_SDL_Keyboard,
   Ada_ManyMouse,
-  Gr_Shapes, Example_Package, Event_Handling;
+  Gr_Shapes, Aux_Fct, Example_Package, Event_Handling;
 use
   Ada.Text_IO, Interfaces.C,
   Ada_SDL_Init, Ada_SDL_Video, Ada_SDL_Event, Ada_SDL_Mouse, Ada_SDL_Keyboard,
   Ada_ManyMouse,
-  Gr_Shapes, Example_Package, Event_Handling;
+  Gr_Shapes, Aux_Fct, Example_Package, Event_Handling;
 
 use
   Ada_SDL_Video.PixelPtrPkg;
@@ -68,6 +68,7 @@ package body Ada_SDL_Main is
 	moveShape		: Boolean	:= False;
 	ShapeMoved		: ShapePtr;
 	PCurr			: PointPtr;
+	Xmin, Xmax, Ymin, Ymax	: Integer;
 
   begin
 
@@ -292,9 +293,11 @@ package body Ada_SDL_Main is
 	  else
 		  -- Update the points in the moved shape
 		  PCurr := ShapeMoved.PStart;
+		  Initscanline(PCurr, Ymin, Ymax);
+		  X_MinMax(PCurr, Xmin, XMax);
   
 		  -- Erase offscreen picture
-		  polygone(offScreenImagePtr, ShapeMoved.Pstart, (0,0,0,255));
+		  -- polygone(offScreenImagePtr, ShapeMoved.Pstart, (0,0,0,255));
 		  while PCurr /= null loop
 			 PCurr.X := PCurr.X + mxrel;
 			 PCurr.Y := PCurr.Y + myrel;
@@ -302,23 +305,24 @@ package body Ada_SDL_Main is
 		  end loop;
 
 		  -- Erase old picture
-		  ClipRect.topLeft := mousePoint;
-		  ClipRect.bottomRight := (mousepoint.x + 50, mousepoint.y + 50, null);
-		  put_line("Erasing old pcture");
-		RedrawWindow(myImagePtr,Zen, ClipRect);
-		put_line("old picture erased");
 
-		SDL_UnlockSurface (surface);
-		SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.X), Sint32 (ClipRect.topLeft.Y), Uint32(50), Uint32(50));
+		  ClipRect.topLeft := (Xmin, Ymin, null);
+		  ClipRect.bottomRight := (Xmax, Ymax, null);
+  		  RedrawWindow(myImagePtr,Zen, ClipRect);
+		  
+		  Initscanline(ShapeMoved.Pstart, Ymin, Ymax);
+		  X_MinMax(ShapeMoved.Pstart, Xmin, XMax);
 
+ 		SDL_UnlockSurface (surface);
+ 		SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.X), Sint32 (ClipRect.topLeft.Y), Uint32(ClipRect.bottomRight.X - ClipRect.topLeft.X), Uint32(ClipRect.bottomRight.Y - ClipRect.topLeft.Y));
+ 
 		-- Draw new picture
 
-		Polygone(myImagePtr,PCurr,ShapeMoved.Color) ;
+		Polygone(myImagePtr,ShapeMoved.PStart,ShapeMoved.Color) ;
 		--insert_Shape(Zen(Polygone), ShapeMoved);
 		polygone(offScreenImagePtr, ShapeMoved.Pstart, ShapeMoved.Identifier);
 		SDL_UnlockSurface (surface);
-		SDL_UpdateRect (surface,Sint32(mx), Sint32 (my), Uint32(50), Uint32(50)) ;
-
+		SDL_UpdateRect (surface, Sint32(Xmin), Sint32 (Ymin), Uint32(Xmax - Xmin), Uint32(Ymax - Ymin));
 
 
 

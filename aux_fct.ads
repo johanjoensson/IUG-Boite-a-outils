@@ -24,6 +24,8 @@ package Aux_Fct is
 
    function Check (X,Y,XLMin,YLMin,XLMax,YLMax: Integer) return Boolean;   
    
+   procedure X_MinMax (P: in PointPtr; min, max : out integer) ;
+
    procedure InitScanline (P: in PointPtr; Min, Max : out Integer) ;
    
    function X_YMin(Point1,Point2: PointPtr) return integer ;
