@@ -62,7 +62,7 @@ package body Aux_Fct is
  	   while Tmp /= null loop
   		   if Tmp.X < Min then
    			   Min := Tmp.X ;
-  		   elsif Tmp.Y > Max then
+  		   elsif Tmp.X > Max then
    			   Max := Tmp.X ;
   		   end if ;
   		   Tmp := Tmp.Next ;

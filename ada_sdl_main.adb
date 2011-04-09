@@ -56,7 +56,7 @@ package body Ada_SDL_Main is
 	mx, my, mxrel, myrel	: Integer ;
     Cour, suiv, Tmp          : PointPtr ;
     Diff            : Integer ;
-    ClipRect        : RectanglePtr ;
+    ClipRect, oldClipRect   : RectanglePtr ;
 	Greentran		: Pixel					:= (0,0,0,0);
 
 	Zen				: Nirvana;
@@ -68,12 +68,14 @@ package body Ada_SDL_Main is
 	moveShape		: Boolean	:= False;
 	ShapeMoved		: ShapePtr;
 	PCurr			: PointPtr;
+	oldXmin, oldXmax, oldYmin, oldYmax	: Integer;
 	Xmin, Xmax, Ymin, Ymax	: Integer;
 
   begin
 
     -- Initialize the ManyMouse package if required.
 
+	  oldClipRect := new rectangle;
     if doManyMouse then
       Ada_MM_InitMice;
       nbMice        := Integer (Ada_MM_AvailableMice);
@@ -291,36 +293,38 @@ package body Ada_SDL_Main is
 		SDL_UnlockSurface (surface);
 		SDL_UpdateRect (surface,Sint32(mx), Sint32 (my), Uint32(12), Uint32(13)) ;
 	  else
-		  -- Update the points in the moved shape
+		  -- Move a polygone!
+		  --
 		  PCurr := ShapeMoved.PStart;
+		  -- Erase old picture
 		  Initscanline(PCurr, Ymin, Ymax);
 		  X_MinMax(PCurr, Xmin, XMax);
+		  ClipRect.topLeft := (Xmin, Ymin, null);
+		  ClipRect.bottomRight := (Xmax, Ymax, null);
   
-		  -- Erase offscreen picture
-		  -- polygone(offScreenImagePtr, ShapeMoved.Pstart, (0,0,0,255));
+		  -- Update the points in the moved shape
 		  while PCurr /= null loop
 			 PCurr.X := PCurr.X + mxrel;
 			 PCurr.Y := PCurr.Y + myrel;
 			 PCurr := PCurr.next;
 		  end loop;
 
-		  -- Erase old picture
-
-		  ClipRect.topLeft := (Xmin, Ymin, null);
-		  ClipRect.bottomRight := (Xmax, Ymax, null);
+		  
   		  RedrawWindow(myImagePtr,Zen, ClipRect);
+		  --RedrawOffscreen(OffscreenImagePtr, Zen, ClipRect);
+  
+		  SDL_UnlockSurface (surface);
+  		  SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.X), Sint32 (ClipRect.topLeft.Y), Uint32(ClipRect.bottomRight.X - ClipRect.topLeft.X), Uint32(ClipRect.bottomRight.Y - ClipRect.topLeft.Y));
+ 
 		  
 		  Initscanline(ShapeMoved.Pstart, Ymin, Ymax);
 		  X_MinMax(ShapeMoved.Pstart, Xmin, XMax);
+  		  ClipRect.topLeft := (Xmin, Ymin, null);
+		  ClipRect.bottomRight := (Xmax, Ymax, null);
+		  Polygone(myImagePtr, ShapeMoved.Pstart, ShapeMoved.Color, ClipRect);
+		  --RedrawWindow(myImagePtr,Zen, ClipRect);
+		  --RedrawOffscreen(OffscreenImagePtr, Zen, ClipRect);
 
- 		SDL_UnlockSurface (surface);
- 		SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.X), Sint32 (ClipRect.topLeft.Y), Uint32(ClipRect.bottomRight.X - ClipRect.topLeft.X), Uint32(ClipRect.bottomRight.Y - ClipRect.topLeft.Y));
- 
-		-- Draw new picture
-
-		Polygone(myImagePtr,ShapeMoved.PStart,ShapeMoved.Color) ;
-		--insert_Shape(Zen(Polygone), ShapeMoved);
-		polygone(offScreenImagePtr, ShapeMoved.Pstart, ShapeMoved.Identifier);
 		SDL_UnlockSurface (surface);
 		SDL_UpdateRect (surface, Sint32(Xmin), Sint32 (Ymin), Uint32(Xmax - Xmin), Uint32(Ymax - Ymin));
 
@@ -363,16 +367,30 @@ package body Ada_SDL_Main is
         if not doManyMouse then
 --          Put_Line ("MouseButton, type = " & Integer'Image (Integer (eventType)) & ", buttonNb = " & Integer'Image (Integer (buttonNb)) & ", x = " & Integer'Image (Integer (x)) & ", y = " & Integer'Image (Integer (y)));
 
+			-- Start moving polygones!
 			moveShape := not moveShape;
 			if moveShape and then ShapeMoved = null then
-		  put_line("moveShape = True");
-			  CheckShape(offScreenImagePtr, integer(x), integer(y), Zen, ShapeMoved);
+	  			put_line("moveShape = True");
+  				CheckShape(offScreenImagePtr, integer(x), integer(y), Zen, ShapeMoved);
 			  if ShapeMoved = null then
 				  moveShape := false;
+			  else
+				  Initscanline(ShapeMoved.Pstart, oldYmin, oldYmax);
+				  X_MinMax(ShapeMoved.Pstart, oldXmin, oldXMax);
 			  end if;
+
 		  else
+			  -- Stop Moving Polygones!
 			  put_line("moveShape = False");
+
+			  -- Remove old figure from the offscreen
+			  oldClipRect.topLeft := (oldXmin, oldYmin, null);
+			  oldClipRect.bottomRight := (oldXmax, oldYmax, null);
+			  RedrawOffScreen(OffscreenImagePtr, zen, oldClipRect);
 			  ShapeMoved := null;
+ 
+			  -- Draw the new position in the offscreen
+			  RedrawOffScreen(OffscreenImagePtr, zen, ClipRect);
 			  moveShape := False;
 		  end if;
 

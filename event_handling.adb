@@ -76,7 +76,6 @@ package body Event_Handling is
 	   while not (CurrLine = null and CurrPolyLine = null and CurrPolygone = null) loop
 		   -- When one of our pointers does not point anywhere (it is null)
 		   -- give it an identifier > any other identifier
-		   Put_line("Loop!!!");
 		   if CurrLine = null then
 			   LinePrio := (255, 255, 255, 0);
 		   else
@@ -98,22 +97,17 @@ package body Event_Handling is
 		   lowestPrio := lowestPriority(LinePrio, PolyLinePrio, PolygonePrio);
 
 		   if LinePrio = lowestPrio then
-			   put_line(" Linje ");
 			   PCour := CurrLine.PStart;
 			   DrawLine(Window, PCour, CurrLine.Color, Clipper);
 			   CurrLine := CurrLine.next;
 		   elsif PolyLinePrio = lowestPrio then
-			   put_line(" Polylinje ");
 			   PCour :=CurrPolyLine.PStart;
 			   Polyline(Window, PCour, CurrPolyLine.Color, Clipper);
 			   CurrPolyLine := CurrPolyLine.next;
 		   elsif PolygonePrio = lowestPrio then
-			   put_line(" Polygon ");
 			   PCour :=CurrPolygone.PStart;
 			   Polygone(Window, PCour, CurrPolygone.Color, Clipper);
 			   CurrPolygone := CurrPolygone.next;
-		   else
-			   Put_line(" HELVETE!!!!! ");
 		   end if;
 
 
