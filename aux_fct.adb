@@ -18,11 +18,17 @@ package body Aux_Fct is
    begin
 	   -- update all the values, one channel at a time
 		if color(iA) /= 0 and then color(iA) /= 255 then
-	 		pPixel(iR) := (color(iA))*pPixel(iR) + (255 - color(iA)+1)* color(iR);
-	 		pPixel(iG) := (color(iA))*pPixel(iG) + (255 - color(iA)+1)* color(iG);
-			pPixel(iB) := (color(iA))*pPixel(iB) + (255 - color(iA)+1)* color(iB); 
+ 			if integer(color(iR)) /= 0 then
+ 				pPixel(iR) := (color(iA))*pPixel(iR) + (255 - color(iA)+1)* color(iR);
+ 			end if;
+ 			if integer(color(iG)) /= 0 then
+ 				pPixel(iG) := (color(iA))*pPixel(iG) + (255 - color(iA)+1)* color(iG);
+ 			end if;
+ 			if integer(color(iB)) /= 0 then
+ 				pPixel(iB) := (color(iA))*pPixel(iB) + (255 - color(iA)+1)* color(iB); 
+ 			end if;
 		elsif color(iA) = 255 then
-			pPixel.all:=color;
+			pPixel.all:= color;
 		end if;
    end;
  

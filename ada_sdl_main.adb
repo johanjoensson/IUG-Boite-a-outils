@@ -33,6 +33,7 @@ package body Ada_SDL_Main is
     blue            : Pixel               := (0, 0, 0, 0);    -- We will construct a blue pixel in this (including opaque alpha)
     black           : Pixel               := (0, 0, 0, 0);    -- We will construct a black pixel in this (including opaque alpha)
 	green			: Pixel				  := (0, 0, 0, 0);	  -- We will construct a green pixel in this (including opaque alpha)
+	white			: Pixel				  := (0, 0, 0, 0);	  -- We xill construct a xhite pixel in this (including opaque alpha) 
     pixels, lines   : PixelPtr;                               -- Pointers to pixels, used in scanline algorithms
 
     key             : SDL_Key;                                -- The number of the keyboard key that was pressed
@@ -70,6 +71,7 @@ package body Ada_SDL_Main is
 	PCurr			: PointPtr;
 	oldXmin, oldXmax, oldYmin, oldYmax	: Integer;
 	Xmin, Xmax, Ymin, Ymax	: Integer;
+	maxPrio			: Pixel					:= (0, 0, 0, 0); 
 
   begin
 
@@ -101,13 +103,18 @@ package body Ada_SDL_Main is
     red(iR)         := 255;
     blue(iB)        := 255;
 	green(iG)		:= 255;
+	white(iR)		:= 255;
+	white(iG)		:= 255;
+	white(iB)		:= 255;
 	Greentran(iG)	:= 255;
     if (iA /= -1) then
       red(iA)       := 255;
       blue(iA)      := 255;
 	  green(iA)		:= 255;
       black(iA)     := 255;
+	  white(iA)		:= 255;
 	  Greentran(iA)	:= 125;
+	  maxPrio(iA)	:= 255;
     end if;
 
     -- Prepare to draw in the window: get exclusive access to its memory,
@@ -134,7 +141,9 @@ package body Ada_SDL_Main is
 	p2	:=  new	point'(width,1,p3);
 	p1	:=  new point'(1,1,p2);
 	cour := p1;
-	insert_Shape(Zen(Canvas), new shape'(p1, Black, (0,0,0,255), null));
+	insert_Shape(Zen(Canvas), new shape'(p1, Black, maxPrio, null));
+	-- Increase the priority for the next Canvas object
+	increasePrio(maxPrio, iR, iG, iB, iA);
 
     -- Draw a big red rectangle in the window, leaving only a border of <margin> black pixels
     --  on every sides.
@@ -145,17 +154,19 @@ package body Ada_SDL_Main is
     for y in reverse 0 .. height - 2 * offset - 1 loop
       pixels        := lines;
       for x in reverse 0 .. width - 2 * offset - 1 loop
-        pixels.all  := red;
+        pixels.all  := white;
         Increment (pixels);
       end loop;
       lines         := lines + ptrdiff_t (width);
     end loop;
 
-	p4  := new point'(offset-1, height - offset, null);
-	p3	:= new point'(width -1 - offset, height - offset,p4);
-	p2	:= new point'(width -1 - offset,offset,p3);
-	p1	:= new point'(offset-1 ,offset,p2);
-	insert_shape(Zen(Canvas), new shape'(p1, red, (1,0,0,255), null));
+	p4  := new point'(offset, height - offset, null);
+	p3	:= new point'(width - offset, height - offset,p4);
+	p2	:= new point'(width - offset,offset,p3);
+	p1	:= new point'(offset ,offset,p2);
+	insert_shape(Zen(Canvas), new shape'(p1, white, maxPrio, null));
+	-- Reset the priority, objects will not be added to the canvas
+	maxPrio(iR) := 0;
 	
    	-- Fill-in an Image record in order to all the "Ex_DrawLine" drawing primitive,
     --  then draw a line.
@@ -186,17 +197,19 @@ package body Ada_SDL_Main is
 	p2	:= new point'(90,50,p3);
 	p1	:= new point'(50,50,p2);
 	
-	Polygone(myImagePtr,p1,Greentran) ;
-	polygone(offScreenImagePtr, p1, (4,0,0,255));
+	Polygone(myImagePtr,p1,Green) ;
+	polygone(offScreenImagePtr, p1, maxPrio);
 
-	insert_shape(Zen(Polygone), new Shape'(p1,Greentran, (4, 0, 0, 255), null));
+	insert_shape(Zen(Polygone), new Shape'(p1,Green, maxPrio, null));
+	increasePrio(maxPrio, iR, iG, iB, iA);
 	
 	p3	:=  new point'(80,90,null);
 	p2	:=  new point'(120,50,p3);
 	p1	:=  new point'(80,50,p2);
 	Polygone(myImagePtr,p1,Greentran) ;
-	Polygone(offscreenImagePtr,p1,(1,0,0,255)) ;
-	insert_shape(Zen(Polygone),  new Shape'(p1,Greentran, (1,0,0,255), null));
+	Polygone(offscreenImagePtr,p1,maxPrio) ;
+	insert_shape(Zen(Polygone),  new Shape'(p1,Greentran, maxPrio, null));
+	increasePrio(maxPrio, iR, iG, iB, iA);
 
     -- Release exclusive access to the window's pixel memory, tell the system to
     --  update the entire window on the screen.
@@ -244,10 +257,14 @@ package body Ada_SDL_Main is
         end if;
 
 		if key = SDLK_p then
+			p3 := new point'(90, 90, null);
+			p2 := new point'(120, 90, p3);
+			p1 := new point'(120, 120, p2);
 			res := SDL_LockSurface (surface);
 			Polygone(myImagePtr,p1,Blue) ;
-			Polygone(offscreenImagePtr,p1,(3,0,0,255)) ;
-			insert_shape(Zen(Polygone),  new Shape'(p1,Blue, (3,0,0,255), null));
+			Polygone(offscreenImagePtr,p1,maxPrio) ;
+			insert_shape(Zen(Polygone),  new Shape'(p1,Blue, maxPrio, null));
+			increasePrio(maxPrio, iR, iG, iB, iA);
 			SDL_UnlockSurface (surface);
 			SDL_UpdateRect (surface);
 
@@ -285,10 +302,10 @@ package body Ada_SDL_Main is
 		m2.all	:=  (mx+6,my+6,m3);
 		m1.all	:=  (mx,my,m2);
 
--- 		clipRect.topLeft := (1,1, null);
--- 		ClipRect.bottomRight :=(width, height, null);
+ 		clipRect.topLeft := (1,1, null);
+ 		ClipRect.bottomRight :=(width, height, null);
 
-		Polygone(myImagePtr,m1,Blue) ;
+		Polygone(myImagePtr,m1,Blue, clipRect) ;
 	   
 		SDL_UnlockSurface (surface);
 		SDL_UpdateRect (surface,Sint32(mx), Sint32 (my), Uint32(12), Uint32(13)) ;
@@ -314,15 +331,15 @@ package body Ada_SDL_Main is
 		  --RedrawOffscreen(OffscreenImagePtr, Zen, ClipRect);
   
 		  SDL_UnlockSurface (surface);
-  		  SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.X), Sint32 (ClipRect.topLeft.Y), Uint32(ClipRect.bottomRight.X - ClipRect.topLeft.X), Uint32(ClipRect.bottomRight.Y - ClipRect.topLeft.Y));
+  		  SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.X), Sint32 (ClipRect.topLeft.Y), Uint32(ClipRect.bottomRight.X - ClipRect.topLeft.X +1), Uint32(ClipRect.bottomRight.Y - ClipRect.topLeft.Y +1));
  
 		  
 		  Initscanline(ShapeMoved.Pstart, Ymin, Ymax);
 		  X_MinMax(ShapeMoved.Pstart, Xmin, XMax);
   		  ClipRect.topLeft := (Xmin, Ymin, null);
 		  ClipRect.bottomRight := (Xmax, Ymax, null);
-		  Polygone(myImagePtr, ShapeMoved.Pstart, ShapeMoved.Color, ClipRect);
-		  --RedrawWindow(myImagePtr,Zen, ClipRect);
+		  --Polygone(myImagePtr, ShapeMoved.Pstart, ShapeMoved.Color, ClipRect);
+		  RedrawWindow(myImagePtr,Zen, ClipRect);
 		  --RedrawOffscreen(OffscreenImagePtr, Zen, ClipRect);
 
 		SDL_UnlockSurface (surface);
@@ -370,7 +387,7 @@ package body Ada_SDL_Main is
 			-- Start moving polygones!
 			moveShape := not moveShape;
 			if moveShape and then ShapeMoved = null then
-	  			put_line("moveShape = True");
+--	  			put_line("moveShape = True");
   				CheckShape(offScreenImagePtr, integer(x), integer(y), Zen, ShapeMoved);
 			  if ShapeMoved = null then
 				  moveShape := false;
@@ -381,7 +398,7 @@ package body Ada_SDL_Main is
 
 		  else
 			  -- Stop Moving Polygones!
-			  put_line("moveShape = False");
+--			  put_line("moveShape = False");
 
 			  -- Remove old figure from the offscreen
 			  oldClipRect.topLeft := (oldXmin, oldYmin, null);

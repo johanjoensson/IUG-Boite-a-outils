@@ -27,10 +27,20 @@ package Event_Handling is
 							TabObj		: Nirvana;
 							Clipper		: RectanglePtr);
 
-	
-	procedure findShape(Id: PixelPtr; Scene: in out Nirvana ; Res : out ShapePtr);
+	-- Procedure to locate an objetc in the zen
+	procedure findShape(Id: PixelPtr; Scene: Nirvana ; Res : out ShapePtr);
 
- procedure CheckShape(offscreenImage: ImagePtr; x,y: integer; Zen : in out Nirvana; res : out ShapePtr);
+	-- Simple procedure to test findShape
+	procedure CheckShape(offscreenImage: ImagePtr; x,y: integer; Zen : in out Nirvana; res : out ShapePtr);
+   
+	-- Procedure to erase a picture from the zen
+	procedure eraseShape(id : PixelPtr; Scene : in out Nirvana; Obj : out ShapePtr);
+   
+	-- Simple procedure to test eraseShape
+	procedure RemoveShape(offscreenImage: ImagePtr; x,y : Integer; Zen: in out nirvana);
+   
+	-- Increase the max priority by one
+	procedure increasePrio (prio: in out pixel; iR, iG, iB, iA : Integer);
 
 end Event_Handling;
 
