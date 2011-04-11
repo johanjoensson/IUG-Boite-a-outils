@@ -71,14 +71,14 @@ end Inside;
           ---requires: Intersection of the half Plane determined by Boundary and of the segment defined by points 1 and 2 exists.          ---guarantees: Intersection points to the intersection point
 
           YI,XI:Integer;
-		  Dy, Dx : integer;
+--		  Dy, Dx : integer;
           M:float;
 
        begin
           if Point1.X/=Point2.X then
---             M:=(Float(Point2.Y-Point1.Y))/Float((Point2.X-Point1.X));
-			 Dx := point2.X - Point1.X;
-			 Dy := point2.Y - Point1.y;
+             M:=(Float(Point2.Y-Point1.Y))/Float((Point2.X-Point1.X));
+-- 			 Dx := point2.X - Point1.X;
+-- 			 Dy := point2.Y - Point1.y;
           end if;
 
           if WBoundary=Upper or WBoundary=Lower  then
@@ -89,9 +89,9 @@ end Inside;
                    YI:=ClipRect.bottomRight.Y;
                 end if;
                 if Point1.X/=Point2.X then
---                    XI:=Integer(Float((YI-Point2.Y))/M+Float(Point2.X));
-                   XI:=(YI-Point2.Y)/(Dy/Dx)+Point2.X;
-                else
+                    XI:=Integer(Float((YI-Point2.Y))/M+Float(Point2.X));
+--                    XI:=(YI-Point2.Y)/(Dy/Dx)+Point2.X;
+                 else
                    XI:=Point1.X;
                 end if;
 
@@ -101,8 +101,8 @@ end Inside;
              else
                 XI:=ClipRect.bottomRight.X;
              end if;
---              YI:=Integer(M*Float((XI-Point2.X))+Float(Point2.Y));
-             YI:=(Dy/Dx)*(XI-Point2.X)+Point2.Y;
+              YI:=Integer(M*Float((XI-Point2.X))+Float(Point2.Y));
+--             YI:=(Dy/Dx)*(XI-Point2.X)+Point2.Y;
           end if;
           Intersection:=new Point'(XI,YI,null);
        end Intersect;
