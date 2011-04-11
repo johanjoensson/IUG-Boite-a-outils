@@ -29,7 +29,7 @@ package body Event_Handling is
 	   end insert_shape;
 
 	   function lowestPriority(Line, Polyline, Polygone, Circle, FCircle : pixel; iR, iG, iB, iA : Integer) return pixel is
-		   -- Return the lowest priority of the three entered.
+		   -- Return the lowest priority of the five entered.
 		   -- Requires: All Identifiers are unique.
 	   begin
  
@@ -61,6 +61,7 @@ package body Event_Handling is
    procedure RedrawWindow(	Window		: ImagePtr;
 							TabObj		: Nirvana;
 							Clipper		: RectanglePtr) is
+							-- Procedure to draw the background (canvas) and all the object we have created, normally called with a rectangular window for clipping.
 
 		pPixel	: PixelPtr	:= Window.basePixel;
 		PCour	: PointPtr;
@@ -154,6 +155,7 @@ package body Event_Handling is
   procedure RedrawOffscreen(Window		: ImagePtr;
 							TabObj		: Nirvana;
 							Clipper		: RectanglePtr) is
+							-- Procedure to redraw the offscreen and all the objects we have created, normally called with a Rectangular window for Clipping, the "color" in the offscreen is an objects priority and identifier
 
 		pPixel	: PixelPtr	:= Window.basePixel;
 		PCour	: PointPtr;
@@ -267,20 +269,14 @@ package body Event_Handling is
 	   res := null;
    end findShape;
 
-   procedure CheckShape(offscreenImage: ImagePtr; x,y: integer; Zen : in out Nirvana; res : out ShapePtr) is
-	   -- Simple procedure for testing findShape
+   procedure CheckShape(offscreenImage: ImagePtr; x,y: integer; Zen : Nirvana; res : out ShapePtr) is
+	   -- Simple procedure for using findShape.
 	   pPtr : pixelPtr;
-   begin
-
-         pPtr:= offscreenImage.basePixel + ptrdiff_t (offscreenImage.width * y + x);
+   begin	   
+	   -- Locate the Identifier of the object we clicked and call findShape.
+	   pPtr:= offscreenImage.basePixel + ptrdiff_t (offscreenImage.width * y + x);
 	   findShape(pPtr, Zen, res); 
-		 if res /= null then
-			 put("Korrekt!");
-			 --put_line(integer'image(integer(res.color(0))) & " :" & integer'image(integer(res.color(1))) & " :" & integer'image(integer(res.color(2)))& " :" & integer'image(integer(res.color(3))));
-		 else
-			 put("Inte korrekt!");
-			 --put_line(integer'image(integer(pPtr.all(0))) & " :" & integer'image(integer(pPtr.all(1))) & " :" & integer'image(integer(pPtr.all(2))));
-		 end if;
+		
    end CheckShape;
 
    procedure eraseShape(id : PixelPtr; Scene : in out Nirvana; Obj : out ShapePtr; erase : Boolean := true) is
@@ -296,15 +292,16 @@ package body Event_Handling is
 				   -- Object found, return object!
 				   Obj := Curr;
 				   Obj.next := null;
-				   if erase then
-					   free(curr);
-				   end if;
 				   if Prec = null then
 					   -- First shape in the list is to be removed
 					   Scene(i) := next;
 				   else
 					   Prec.next := next;
 				   end if;
+				   if erase then
+					   free(curr);
+				   end if;
+
 				   return;
 			   end if;
 			   Prec := Curr;
@@ -314,17 +311,12 @@ package body Event_Handling is
 	   -- no object was found nothing to do
    end eraseShape;
 
-   procedure RemoveShape(offscreenImage: ImagePtr; x,y : Integer; Zen: in out nirvana; res : out ShapePtr) is
+   procedure RemoveShape(offscreenImage: ImagePtr; x,y : Integer; Zen: in out nirvana; res : out ShapePtr; erase : Boolean := True) is
 	   pPtr	: PixelPtr;
    begin
 	   pPtr:= offscreenImage.basePixel + ptrdiff_t (offscreenImage.width * y + x);
-	   eraseShape(pPtr, Zen, Res, false);
+	   eraseShape(pPtr, Zen, Res, erase);
 -- 	   findShape(pPtr, Zen, Res);
- 	   if res /= null then
- 		   put_line("Misslyckat!");
- 	   else
- 		   put_line("Tog bort figuren!");
- 	   end if;
    end RemoveShape; 
 
    procedure increasePrio (prio: in out pixel; iR, iG, iB, iA : Integer) is
@@ -544,5 +536,59 @@ begin
             DrawLine(MyImagePtr, new point'(Mousex,Min(Height,Mousey+120), new point'(Mousex+80,Min(Height,Mousey+120), null)),black, Clipper) ;
 
 end DrawToolglass;
+
+procedure DrawColorTable(MyImagePtr : ImagePtr; mousex, mousey : Integer; iR, iG, iB, iA : Integer; Clipper : RectanglePtr := null) is
+	Tabcolor1, TabColor2, TabColor3, TabColor4, TabColor5, TabColor6, TabColor7,Tabcolor8, TabColor9, TabColor10, TabColor11, TabColor12, TabColor13, TabColor14,Tabcolor15, TabColor16, TabColor17, TabColor18, TabColor19, TabColor20, TabColor21 : PointPtr := new point;
+	height : Integer := MyImagePtr.height;
+	width : Integer := MyImagePtr.width;
+	Red, Green, Blue, Black : Pixel := (0, 0, 0, 0);
+
+
+begin
+	if iA /= -1 then
+		Red(iA) := 128;
+		Green(iA) := 128;
+		Blue(iA) := 128;
+		Black(iA) := 128;
+	end if;
+	red(iR) := 255;
+	Green(iG) := 255;
+	Blue(iB) := 255;
+			Tabcolor1.all:= (Mousex,Min(Height,Mousey),null) ;
+            Tabcolor2.all:= (Mousex+80,Min(Height,Mousey),Tabcolor1) ;
+            Tabcolor3.all:= (Mousex+80,Min(Height,Mousey+120),Tabcolor2) ;
+            Tabcolor4.all:= (Mousex,Min(Height,Mousey+120),Tabcolor3) ;
+            Tabcolor5.all:= (Mousex,Min(Height,Mousey),Tabcolor4) ;
+            Polyline(MyImagePtr,Tabcolor5,black, Clipper) ;
+            Tabcolor6.all:= (Mousex+5,Min(Height,Mousey+5),null) ;
+            Tabcolor7.all:= (Mousex+35,Min(Height,Mousey+5),Tabcolor6) ;
+            Tabcolor8.all:= (Mousex+35,Min(Height,Mousey+35),Tabcolor7) ;
+            Tabcolor9.all:= (Mousex+5,Min(Height,Mousey+35),Tabcolor8) ;
+            Polygone(MyImagePtr,Tabcolor9,Red, Clipper) ;
+            Tabcolor10.all:= (Mousex+45,Min(Height,Mousey+5),null) ;
+            Tabcolor11.all:= (Mousex+75,Min(Height,Mousey+5),Tabcolor10) ;
+            Tabcolor12.all:= (Mousex+75,Min(Height,Mousey+35),Tabcolor11) ;
+            Tabcolor13.all:= (Mousex+45,Min(Height,Mousey+35),Tabcolor12) ;
+            Polygone(MyImagePtr,Tabcolor13,green, Clipper) ;
+            Tabcolor14.all:= (Mousex+45,Min(Height,Mousey+45),null) ;
+            Tabcolor15.all:= (Mousex+75,Min(Height,Mousey+45),Tabcolor14) ;
+            Tabcolor16.all:= (Mousex+75,Min(Height,Mousey+75),Tabcolor15) ;
+            Tabcolor17.all:= (Mousex+45,Min(Height,Mousey+75),Tabcolor16) ;
+            Polygone(MyImagePtr,Tabcolor17,black, Clipper) ;
+            Tabcolor18.all:= (Mousex+5,Min(Height,Mousey+45),null) ;
+            Tabcolor19.all:= (Mousex+35,Min(Height,Mousey+45),Tabcolor18) ;
+            Tabcolor20.all:= (Mousex+35,Min(Height,Mousey+75),Tabcolor19) ;
+            Tabcolor21.all:= (Mousex+5,Min(Height,Mousey+75),Tabcolor20) ;
+            Polygone(MyImagePtr,Tabcolor21,blue, Clipper) ;
+            Drawline(MyImagePtr, new point'(Mousex+45,Min(Height,Mousey+100), new point'(Mousex+75,Min(Height,Mousey+100), null)),black, Clipper) ;
+            Drawline(MyImagePtr, new point'(Mousex+65,Min(Height,Mousey+90), new point'(Mousex+75,Min(Height,Mousey+100), null)),black, Clipper) ;
+            Drawline(MyImagePtr, new point'(Mousex+65,Min(Height,Mousey+110), new point'(Mousex+75,Min(Height,Mousey+100), null)),black, Clipper) ;
+            Drawline(MyImagePtr, new point'(Mousex+40,Min(Height,Mousey), new point'(Mousex+40,Min(Height,Mousey+120), null)),black, Clipper) ;
+            Drawline(MyImagePtr, new point'(Mousex,Min(Height,Mousey+40), new point'(Mousex+80,Min(Height,Mousey+40), null)),black, Clipper) ;
+            Drawline(MyImagePtr, new point'(Mousex,Min(Height,Mousey+80), new point'(Mousex+80,Min(Height,Mousey+80), null)),black, Clipper) ;
+--             Postabx:= Mousex ;
+--             Postaby:= Mousey ;
+end DrawColorTable;
+
 
 end Event_Handling;

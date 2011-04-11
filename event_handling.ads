@@ -31,13 +31,13 @@ package Event_Handling is
 	procedure findShape(Id: PixelPtr; Scene: Nirvana ; Res : out ShapePtr);
 
 	-- Simple procedure to test findShape
-	procedure CheckShape(offscreenImage: ImagePtr; x,y: integer; Zen : in out Nirvana; res : out ShapePtr);
+	procedure CheckShape(offscreenImage: ImagePtr; x,y: integer; Zen : Nirvana; res : out ShapePtr);
    
 	-- Procedure to erase a picture from the zen
 	procedure eraseShape(id : PixelPtr; Scene : in out Nirvana; Obj : out ShapePtr; erase : Boolean := True);
    
 	-- Simple procedure to test eraseShape
-	procedure RemoveShape(offscreenImage: ImagePtr; x,y : Integer; Zen: in out nirvana; res : out ShapePtr);
+	procedure RemoveShape(offscreenImage: ImagePtr; x,y : Integer; Zen: in out nirvana; res : out ShapePtr; erase : Boolean := True);
    
 	-- Increase the max priority by one
 	procedure increasePrio (prio: in out pixel; iR, iG, iB, iA : Integer);
@@ -50,6 +50,9 @@ package Event_Handling is
 	function whatObject(offscreenImage: ImagePtr; x,y : Integer; Zen: nirvana) return OBJECT;
 
 	procedure DrawToolglass(MyImagePtr : ImagePtr; mousex, mousey : Integer; iR, iG, iB, iA : Integer; Clipper : RectanglePtr := null);
+	
+	procedure DrawColorTable(MyImagePtr : ImagePtr; mousex, mousey : Integer; iR, iG, iB, iA : Integer; Clipper : RectanglePtr := null);
+
 
 end Event_Handling;
 
