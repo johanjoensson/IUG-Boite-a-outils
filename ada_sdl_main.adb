@@ -610,8 +610,10 @@ package body Ada_SDL_Main is
 						
 						-- The Boolean is to make sure that we erase the object
 						removeShape(OffscreenImagePtr, mx, my, Zen, ShapeMoved, True);
+						ShapeMoved := null;
 						resortPrio(Zen, iR, iG, iB, iA, MaxPrio);
 						RedrawWindow(MyImagePtr, Zen, ClipRect);
+						RedrawOffScreen(OffscreenImagePtr, Zen, ClipRect);
 						DrawToolglass(MyImagePtr, ToolglassPos.x, ToolGlassPos.y, iR, iG, iB, iA);
 						SDL_UnlockSurface (surface);
 						SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.x), Sint32 (ClipRect.topLeft.y), Uint32(ClipRect.bottomRight.x - ClipRect.topLeft.x), Uint32(ClipRect.bottomRight.y - ClipRect.topLeft.y));
@@ -629,9 +631,15 @@ package body Ada_SDL_Main is
 					if ShapeMoved /= null then					
 						Initscanline(ShapeMoved.Pstart, Ymin, Ymax);
 						X_MinMax(ShapeMoved.Pstart, Xmin, XMax);
-						ClipRect.topLeft := (Xmin, Ymin, null);
-						ClipRect.bottomRight := (Xmax, Ymax, null);
-						
+
+						if ShapeType = Circle or else ShapeType = FilledCircle then
+							Radius := max(abs (ShapeMoved.Pstart.X - ShapeMoved.Pstart.next.x), abs(ShapeMoved.Pstart.y - ShapeMoved.Pstart.next.y));
+							ClipRect.topLeft := (ShapeMoved.Pstart.X - Radius - 1, ShapeMoved.Pstart.y - Radius - 1, null);
+							ClipRect.bottomRight := (ShapeMoved.Pstart.x + Radius + 1, ShapeMoved.Pstart.y + Radius +1, null);
+						else
+							ClipRect.topLeft := (Xmin, Ymin, null);
+							ClipRect.bottomRight := (Xmax + 1, Ymax + 1, null);
+						end if;
 						ShapeMoved.Identifier := maxPrio;
 						increasePrio(MaxPrio, iR, iG, iB, iA);
 						insert_Shape(Zen(ShapeType), ShapeMoved);
@@ -785,6 +793,9 @@ package body Ada_SDL_Main is
  				ShapeType := whatObject(offScreenImagePtr, integer(x), integer(y),Zen);
  				CheckShape(offScreenImagePtr, integer(x), integer(y), Zen, ShapeMoved);
  			  if ShapeMoved = null then
+				  if ShapeType = Canvas then
+					  put_line("Vad i helvete?");
+				  end if;
  				  moveShape := false;
  				  put_line("Ooops!");
  				  put_line(integer'image(integer(maxPrio(iR))));
@@ -793,9 +804,7 @@ package body Ada_SDL_Main is
 				  moveShape := True;
  				  Initscanline(ShapeMoved.Pstart, oldYmin, oldYmax);
  				  X_MinMax(ShapeMoved.Pstart, oldXmin, oldXMax);
- 				  put_line("Xmin, Ymin =" & integer'image(oldXmin) & integer'image(oldYmin));
- 				  put_line("Xmax, Ymax =" & integer'image(oldXmax) & integer'image(oldYmax));
- 			  end if;
+			  end if;
 			
 			elsif integer(buttonnb) = 1 and then Ada_SDL_EventType (event) = SDL_MOUSEBUTTONDOWN and then MoveShape then
 
