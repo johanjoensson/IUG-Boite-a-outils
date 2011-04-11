@@ -4,6 +4,7 @@ use Ada_SDL_Video, Ada_SDL_Video.PixelPtrPkg, Interfaces.C, Gr_Shapes, Drawline_
 package body Event_Handling is
 
 	procedure free is new Ada.Unchecked_Deallocation (Shape, ShapePtr);
+	procedure free is new Ada.Unchecked_Deallocation (Point, PointPtr);
    	
 	procedure insert_shape(Shape_Table: in out ShapePtr; Shape: in ShapePtr) is
 		-- Insert a shape into the Scene (called Shape_Table), the table is sorted in order of Identifier
@@ -60,7 +61,7 @@ package body Event_Handling is
 
    procedure RedrawWindow(	Window		: ImagePtr;
 							TabObj		: Nirvana;
-							Clipper		: RectanglePtr) is
+							Clipper		: RectanglePtr := null) is
 							-- Procedure to draw the background (canvas) and all the object we have created, normally called with a rectangular window for clipping.
 
 		pPixel	: PixelPtr	:= Window.basePixel;
@@ -154,7 +155,7 @@ package body Event_Handling is
 
   procedure RedrawOffscreen(Window		: ImagePtr;
 							TabObj		: Nirvana;
-							Clipper		: RectanglePtr) is
+							Clipper		: RectanglePtr := null) is
 							-- Procedure to redraw the offscreen and all the objects we have created, normally called with a Rectangular window for Clipping, the "color" in the offscreen is an objects priority and identifier
 
 		pPixel	: PixelPtr	:= Window.basePixel;
@@ -381,7 +382,7 @@ package body Event_Handling is
 	   
 	   while not (CurrLine = null and CurrPolyLine = null and CurrPolygone = null and currCircle = null and currCircleF = null) loop
 		   -- When one of our pointers does not point anywhere (it is null)
-		   -- give it an identifier > any other identifier
+		   -- give it an identifier > any other identifier and an alpha value of 0
 		   if CurrLine = null then
 			   LinePrio := nullPrio;
 		   else
@@ -436,6 +437,7 @@ package body Event_Handling is
 		   end if;
 		   put_line("Sorterar, MaxPrio =" & integer'image(integer(maxPrio(iR))));
 	   end loop;
+		   put_line("Sortering klar, MaxPrio =" & integer'image(integer(maxPrio(iR))));
    end resortPrio;
 
 function ObjectType(id : PixelPtr; scene : Nirvana) return OBJECT is
@@ -464,6 +466,7 @@ begin
 	 res := ObjectType(pPtr, Zen);
 	 return res;
 end whatObject;
+
 
 procedure DrawToolglass(MyImagePtr : ImagePtr; mousex, mousey : Integer; iR, iG, iB, iA : Integer; Clipper : RectanglePtr := null)is
 	Tool1, Tool2, Tool3, Tool4,Tool5, Tool6, Tool7, Tool8,Tool9, Tool10, Tool11, Tool12,Tool13, Tool14, Tool15, Tool16,Tool17, Tool18, Tool19, Tool20,Tool21, Tool22, Tool23, Tool24,Tool25, Tool26, Tool27, Tool28 : PointPtr := new point;
@@ -525,15 +528,52 @@ begin
             Tool27.all:= (Mousex+57,Min(Height,Mousey+117),Tool26) ;
             Tool28.all:= (Mousex+43,Min(Height,Mousey+117),Tool27) ;
             Polygone(MyImagePtr,Tool28,blue, Clipper) ;
-            Drawline(MyImagePtr,new point'(Mousex+5,Min(Height,Mousey+125), new point'(Mousex+35,Min(Height,Mousey+155), null)),black, Clipper) ;
-            Drawline(MyImagePtr, new point'(Mousex+5,Min(Height,Mousey+155), new point'(Mousex+35,Min(Height,Mousey+125), null)),black, Clipper) ;
-            Drawline(MyImagePtr, new point'(Mousex+60,Min(Height,Mousey+125), new point'(Mousex+60,Min(Height,Mousey+155), null)),black, Clipper) ;
-            Drawline(MyImagePtr, new point'(Mousex+50,Min(Height,Mousey+135), new point'(Mousex+60,Min(Height,Mousey+125), null)),black, clipper) ;
-            Drawline(MyImagePtr, new point'(Mousex+70,Min(Height,Mousey+135), new point'(Mousex+60,Min(Height,Mousey+125), null)),black, Clipper) ;
-            DrawLine(MyImagePtr, new point'(Mousex+40,Min(Height,Mousey), new point'(Mousex+40,Min(Height,Mousey+160), null)),black, Clipper) ;
-            DrawLine(MyImagePtr, new point'(Mousex,Min(Height,Mousey+40), new point'(Mousex+80,Min(Height,Mousey+40), null)),black, Clipper) ;
-            DrawLine(MyImagePtr, new point'(Mousex,Min(Height,Mousey+80), new point'(Mousex+80,Min(Height,Mousey+80), null)),black, Clipper) ;
-            DrawLine(MyImagePtr, new point'(Mousex,Min(Height,Mousey+120), new point'(Mousex+80,Min(Height,Mousey+120), null)),black, Clipper) ;
+			
+			Tool2.all := (Mousex+35,Min(Height,Mousey+155), null);
+			Tool1.all := (Mousex+5,Min(Height,Mousey+125), Tool2);
+            Drawline(MyImagePtr,Tool1,black, Clipper) ;
+			
+			Tool2.all := (Mousex+35,Min(Height,Mousey+125), null);
+			Tool1.all := (Mousex+5,Min(Height,Mousey+155), Tool2);
+            Drawline(MyImagePtr,Tool1,black, Clipper) ;
+
+			Tool2.all := (Mousex+60,Min(Height,Mousey+155), null);
+			Tool1.all := (Mousex+60,Min(Height,Mousey+125), Tool2);
+            Drawline(MyImagePtr, Tool1, black, Clipper) ;
+
+			Tool2.all := (Mousex+50,Min(Height,Mousey+135), null);
+			Tool1.all := (Mousex+60,Min(Height,Mousey+125), Tool2);
+            Drawline(MyImagePtr, Tool1,black, clipper) ;
+
+            Tool2.all := (Mousex+70,Min(Height,Mousey+135), null);
+			Tool1.all := (Mousex+60,Min(Height,Mousey+125), Tool2);
+			Drawline(MyImagePtr, Tool1, black, Clipper) ;
+
+			Tool2.all := (Mousex+40,Min(Height,Mousey+160), null);
+			Tool1.all := (Mousex+40,Min(Height,Mousey), Tool2);
+			DrawLine(MyImagePtr, Tool1, black, Clipper) ;
+
+			Tool2.all := (Mousex+80,Min(Height,Mousey+40), null);
+			Tool1.all := (Mousex,Min(Height,Mousey+40), Tool2);
+		   	DrawLine(MyImagePtr, Tool1, black, Clipper) ;
+
+            Tool2.all := (Mousex+80,Min(Height,Mousey+80), null);
+			Tool1.all := (Mousex,Min(Height,Mousey+80), Tool2);
+			DrawLine(MyImagePtr, Tool1, black, Clipper) ;
+
+            Tool2.all := (Mousex+80,Min(Height,Mousey+120), null);
+			Tool1.all := (Mousex,Min(Height,Mousey+120), Tool2);
+		   	DrawLine(MyImagePtr, Tool1,black, Clipper) ;
+
+			Tool2.next := Tool3;
+
+			erasePoints(Tool1);
+			erasePoints(Tool8);
+			erasePoints(Tool12);
+			erasePoints(Tool16);
+			erasePoints(Tool20);
+			erasePoints(Tool24);
+			erasePoints(Tool28);
 
 end DrawToolglass;
 
@@ -580,14 +620,41 @@ begin
             Tabcolor20.all:= (Mousex+35,Min(Height,Mousey+75),Tabcolor19) ;
             Tabcolor21.all:= (Mousex+5,Min(Height,Mousey+75),Tabcolor20) ;
             Polygone(MyImagePtr,Tabcolor21,blue, Clipper) ;
-            Drawline(MyImagePtr, new point'(Mousex+45,Min(Height,Mousey+100), new point'(Mousex+75,Min(Height,Mousey+100), null)),black, Clipper) ;
-            Drawline(MyImagePtr, new point'(Mousex+65,Min(Height,Mousey+90), new point'(Mousex+75,Min(Height,Mousey+100), null)),black, Clipper) ;
-            Drawline(MyImagePtr, new point'(Mousex+65,Min(Height,Mousey+110), new point'(Mousex+75,Min(Height,Mousey+100), null)),black, Clipper) ;
-            Drawline(MyImagePtr, new point'(Mousex+40,Min(Height,Mousey), new point'(Mousex+40,Min(Height,Mousey+120), null)),black, Clipper) ;
-            Drawline(MyImagePtr, new point'(Mousex,Min(Height,Mousey+40), new point'(Mousex+80,Min(Height,Mousey+40), null)),black, Clipper) ;
-            Drawline(MyImagePtr, new point'(Mousex,Min(Height,Mousey+80), new point'(Mousex+80,Min(Height,Mousey+80), null)),black, Clipper) ;
---             Postabx:= Mousex ;
---             Postaby:= Mousey ;
+
+
+			TabColor2.all := (Mousex+75,Min(Height,Mousey+100), null);
+			TabColor1.all := (Mousex+45,Min(Height,Mousey+100), TabColor2);
+            Drawline(MyImagePtr, TabColor1, black, Clipper) ;
+
+			TabColor2.all := (Mousex+75,Min(Height,Mousey+100), null);
+			TabColor1.all := (Mousex+65,Min(Height,Mousey+90), TabColor2);
+		   	Drawline(MyImagePtr, TabColor1,black, Clipper) ;
+
+			TabColor2.all := (Mousex+75,Min(Height,Mousey+100), null);
+			TabColor1.all := (Mousex+65,Min(Height,Mousey+110), TabColor2);
+			Drawline(MyImagePtr, TabColor1, black, Clipper) ;
+
+            TabColor2.all := (Mousex+40,Min(Height,Mousey+120), null);
+			TabColor1.all := (Mousex+40,Min(Height,Mousey), TabColor2);
+			Drawline(MyImagePtr, TabColor1, black, Clipper) ;
+
+            TabColor2.all := (Mousex+80,Min(Height,Mousey+40), null);
+			TabColor1.all := (Mousex,Min(Height,Mousey+40), TabColor2);
+			Drawline(MyImagePtr,TabColor1, black, Clipper) ;
+
+
+		   	TabColor2.all := (Mousex+80,Min(Height,Mousey+80), null);
+			TabColor1.all := (Mousex,Min(Height,Mousey+80), TabColor2);
+            Drawline(MyImagePtr, TabColor1, black, Clipper) ;
+
+			TabColor2.next := TabColor1;
+			TabColor1.next := null;
+
+			erasePoints(Tabcolor5);
+			erasePoints(Tabcolor9);
+			erasePoints(Tabcolor13);
+			erasePoints(Tabcolor17);
+			erasePoints(Tabcolor21);
 end DrawColorTable;
 
 

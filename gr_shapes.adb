@@ -1,8 +1,7 @@
-with  Ada_SDL_Video, Interfaces.C, Ada.Text_IO, Ada.Integer_Text_IO, Ada.Unchecked_Deallocation, example_package, Drawline_Pkg, Aux_Fct ;
-use   Ada_SDL_Video, Interfaces.C, Ada_SDL_Video.PixelPtrPkg, Ada.Text_IO, Ada.Integer_Text_IO, example_package, Drawline_Pkg, Aux_Fct;
+with  Ada_SDL_Video, Interfaces.C, Ada.Text_IO, Ada.Integer_Text_IO, Ada.Unchecked_Deallocation,  Drawline_Pkg, Aux_Fct ;
+use   Ada_SDL_Video, Interfaces.C, Ada_SDL_Video.PixelPtrPkg, Ada.Text_IO, Ada.Integer_Text_IO,  Drawline_Pkg, Aux_Fct;
 
 package body Gr_Shapes is
-
 
    procedure Polyline (image      : ImagePtr;
                        points     : PointPtr;
@@ -27,11 +26,11 @@ package body Gr_Shapes is
                        pixelValue : Pixel;
                        clipRect   : RectanglePtr  :=    null) is
       Ymin,Ymax: Integer ;
-      PDeb,PCour: PointPtr:= points ;
+      PDeb,PCour, Tmp : PointPtr:= points ;
       TCA,Cour: CotePtr ;
       TC: array (0..Image.height) of CotePtr ;
       pPtr: PixelPtr ;
-      Final_Y,X, line, XMAx: Integer ;
+      Final_Y,X, XMAx: Integer ;
       Paire: Boolean ;
 	  PClip	: PointPtr:= Points;
    begin
@@ -56,18 +55,6 @@ package body Gr_Shapes is
          Table_Des_Cotes(PCour, PDeb, TC(Final_Y));
       end if ;
 	
--- 	  --Clipping
--- 	  line := Ymin;
--- 	  if ClipRect /= null then
---       -- Trouve la premier scanline
--- 		  while line < ClipRect.topLeft.y loop 
--- 			  Table_Des_Cotes_Actifs(TC(line), TCA);
--- 			  Update_Cotes(TCA, line+1);
--- 			  line := line +1 ;
--- 		  end loop;
--- 		  Ymin := Max(Ymin, Cliprect.topLeft.Y);
--- 		  Ymax := Min(Ymax, ClipRect.bottomRight.Y);
--- 	  end if;
  
 	  -- Remplissage de poygone
       for y in Ymin ..Ymax-1 loop
@@ -109,7 +96,7 @@ package body Gr_Shapes is
          Update_Cotes(TCA, Y+1);
       end loop;
    end if;
-   end Polygone ;
+end Polygone ;
 
 
 end Gr_Shapes;

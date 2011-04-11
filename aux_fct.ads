@@ -25,6 +25,8 @@ package Aux_Fct is
    function Check (X,Y,XLMin,YLMin,XLMax,YLMax: Integer) return Boolean;   
    
    procedure X_MinMax (P: in PointPtr; min, max : out integer) ;
+   
+   procedure erasePoints(Points : pointPtr) ;
 
    procedure InitScanline (P: in PointPtr; Min, Max : out Integer) ;
    
@@ -35,6 +37,20 @@ package Aux_Fct is
    procedure Table_Des_Cotes_Actifs(Cotes: in CotePtr; TCA: in out CotePtr) ;
    
    procedure Update_Cotes(Cotes : in out CotePtr; Line : in Natural) ;
+  
+   type Boundary is (Upper,Lower,Left,Right);
+
+  function Inside (Point:PointPtr;ClipRect:RectanglePtr;WBoundary:Boundary) return Boolean;
+  pragma inline(Inside);
+
+  procedure Intersect(ClipRect: in RectanglePtr;Point1,Point2: in PointPtr;WBoundary:Boundary; Intersection: out PointPtr);
+  pragma inline(Intersect);
+
+  procedure SutherlandHodgmanClip(Poly:in PointPtr;PolygonClip:out PointPtr; ClipRect:in RectanglePtr;TheBoundary:Boundary);
+
+
+  function PolygonClipping(Points:PointPtr;ClipRect:RectanglePtr) return PointPtr;
+
 end Aux_Fct;
 
 

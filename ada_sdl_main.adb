@@ -8,12 +8,12 @@ with
   Ada.Text_IO, Interfaces.C,
   Ada_SDL_Init, Ada_SDL_Video, Ada_SDL_Event, Ada_SDL_Mouse, Ada_SDL_Keyboard,
   Ada_ManyMouse,
-  Gr_Shapes, Aux_Fct, Example_Package, Event_Handling, Drawline_Pkg, Circle_Pkg, Ada.Numerics.Elementary_Functions ;
+  Gr_Shapes, Aux_Fct, Event_Handling, Drawline_Pkg, Circle_Pkg, Ada.Numerics.Elementary_Functions ;
 use
   Ada.Text_IO, Interfaces.C,
   Ada_SDL_Init, Ada_SDL_Video, Ada_SDL_Event, Ada_SDL_Mouse, Ada_SDL_Keyboard,
   Ada_ManyMouse,
-  Gr_Shapes, Aux_Fct, Example_Package, Event_Handling, Drawline_Pkg, Circle_Pkg, Ada.Numerics.Elementary_Functions ;
+  Gr_Shapes, Aux_Fct, Event_Handling, Drawline_Pkg, Circle_Pkg, Ada.Numerics.Elementary_Functions ;
 
 use
   Ada_SDL_Video.PixelPtrPkg;
@@ -52,45 +52,44 @@ package body Ada_SDL_Main is
 
     myImage         : Image;                                  -- An image structure used to call the Ex_DrawLine primitive
 
-    myImagePtr      : ImagePtr;
-    P1,P2,P3,P4  : PointPtr ;
-	m1,m2,m3,m4,m5,m6,m7	: PointPtr ;
-	mouseColor		: Pixel;
-	mx, my, mxrel, myrel	: Integer ;
-    Cour          : PointPtr ;
-    ClipRect, oldClipRect   : RectanglePtr ;
-	Greentran		: Pixel					:= (0,0,0,0);
+    myImagePtr      : ImagePtr;								  -- Pointer to our image structure, used for most drawing procedures
+	p1, p2, p3, p4	: PointPtr	;							  -- Points used for creating the canvas
+	m1,m2,m3,m4,m5,m6,m7	: PointPtr ;					  -- The points of our pointer (mouse)	
+	mouseColor		: Pixel;								  -- The color of our mouse
+	mx, my, mxrel, myrel	: Integer ;						  -- Integer values of the mouse's position and it's movement
+    ClipRect, oldClipRect   : RectanglePtr ;				  -- Rectangles used for clipping, containing current and old position of an object respectively
+	Greentran		: Pixel					:= (0,0,0,0);	  -- We will create a transparent green color in this variable
 
-	Zen				: Nirvana;
-	offScreen		: SDL_SurfacePtr;
-	offscreenImage	: Image;
-	offScreenImagePtr	: ImagePtr;
-	offPixels		: PixelPtr;
-	mousePoint		: point;
-	moveShape		: Boolean	:= False;
-	ShapeMoved		: ShapePtr;
-	ShapeType		: OBJECT;
-	PCurr			: PointPtr;
-	oldXmin, oldXmax, oldYmin, oldYmax	: Integer;
-	Xmin, Xmax, Ymin, Ymax	: Integer;
-	maxPrio			: Pixel					:= (0, 0, 0, 0);
+	Zen				: Nirvana;				-- A table of lists containing all the object we have created
+	offScreen		: SDL_SurfacePtr;		-- An offscreen used for picking
+	offscreenImage	: Image;				-- Image Structure off the offscreen
+	offScreenImagePtr	: ImagePtr;			-- Pointer to the Image of the offscreen
+	offPixels		: PixelPtr;				-- Pointer to Pixels in the offscreen
+	mousePoint		: point;				-- The old location of the mouse
+	moveShape		: Boolean	:= False;	-- Boolean indicating wheter or not we are moving an object
+	ShapeMoved		: ShapePtr;				-- The object we are moving, null if we are not moving any object
+	ShapeType		: OBJECT;				-- The kind of object we are moving
+	PCurr			: PointPtr;				-- Pointer to a point
+	oldXmin, oldXmax, oldYmin, oldYmax	: Integer;	-- The coordinates of a rectangle containing the old position of an object
+	Xmin, Xmax, Ymin, Ymax	: Integer;		-- The coordinates of a rectangle containing the current position of an object
+	maxPrio			: Pixel					:= (0, 0, 0, 0); -- Indicator of priority, one higher than the highest priority of the objects
 
-	toolglassactive: Boolean := False;	
- 	ToolglassActivated	: Boolean	:= False;
-	ToolglassPos	: PointPtr	:= new point;
-	ActiveFunction	: Boolean	:= false;
+	toolglassactive: Boolean := False;		-- True if we are moving the toolglass
+ 	ToolglassActivated	: Boolean	:= False;	-- True if we have designed the toolglass at least once
+	ToolglassPos	: PointPtr	:= new point;	-- The position of the upper left corner of the toolglass
+	ActiveFunction	: Boolean	:= false;		-- True if we are currently performing some sort of action (drawing an object f.i.)
 
-	ColorTableActive	: Boolean	:= False;
-	ColortablePos		: PointPtr	:= new point;
+	ColorTableActive	: Boolean	:= False;	-- True if the color table is displayed
+	ColortablePos		: PointPtr	:= new point;	-- The position of the upper left corner of the color table
 
-	fPoint,nPoint, tmpPoint	: PointPtr	;
-	CurrColor				: Pixel ;
-	DrawlineActive			: Boolean	:= False;
-	PolylineActive			: Boolean	:= False;
-	PolygonActive			: Boolean	:= False;
-	CircleActive			: Boolean	:= False;
-	FilledCircleActive		: Boolean	:= False;
-	Radius					: Integer	;
+	fPoint,nPoint, tmpPoint	: PointPtr	;		-- Pointers to points we use to create and draw objects
+	CurrColor				: Pixel ;			-- The current color we are using
+	DrawlineActive			: Boolean	:= False;	-- True if we are drawing a line
+	PolylineActive			: Boolean	:= False;	-- True if we are drawing a polyline
+	PolygonActive			: Boolean	:= False;	-- True if we are drawing a polygon
+	CircleActive			: Boolean	:= False;	-- True if we are drawing an (empty) circle
+	FilledCircleActive		: Boolean	:= False;	-- True if we are drawing a (filled) circle
+	Radius					: Integer	;			-- Not really the radius of a circle, but much easier and cheaper to calculate
 
 	
 
@@ -109,6 +108,8 @@ package body Ada_SDL_Main is
     -- Create the window on which everything is drawn, and receiving mouse and keyboard events.
 
     surface         := Ada_SDL_CreateWindow (width, height);
+
+	-- Create the offscreen
 	offScreen		:= Ada_SDL_CreateOffscreen (surface,width, height);
 
     if surface = null then
@@ -139,10 +140,11 @@ package body Ada_SDL_Main is
 	  Greentran(iA)	:= 128;
 	  maxPrio(iA)	:= 255;
     end if;
+	-- Default color fo drawing is blue
 	currColor := Blue;
 
     -- Prepare to draw in the window: get exclusive access to its memory,
-    --  get a pointer to the first pixel.
+    --  get a pointer to the first pixels.
 
     res             := SDL_LockSurface (surface);
     pixels          := Ada_SDL_GetPixelPtr (surface);
@@ -151,6 +153,7 @@ package body Ada_SDL_Main is
 
 
     -- Erase the window: set all its pixels to black.
+	-- Set all the offscreen's pixels to Black (so that we know the default value of the Canvas
 
     for y in 1 .. height loop
       for x in 1 .. width loop
@@ -165,13 +168,11 @@ package body Ada_SDL_Main is
 	p3	:=  new point'(width,height,p4);
 	p2	:=  new	point'(width,1,p3);
 	p1	:=  new point'(1,1,p2);
-	cour := p1;
 	insert_Shape(Zen(Canvas), new shape'(p1, Black, maxPrio, null));
-	-- Increase the priority for the next Canvas object
-	--increasePrio(maxPrio, iR, iG, iB, iA);
-
+	
     -- Draw a big red rectangle in the window, leaving only a border of <margin> black pixels
     --  on every sides.
+	--  Add this rectangle to the canvas and draw it in the offscreen
 
     lines           := Ada_SDL_GetPixelPtr (surface);
     lines           := lines + ptrdiff_t (offset * width + offset);
@@ -190,6 +191,8 @@ package body Ada_SDL_Main is
 	p2	:= new point'(width - offset -1,offset,p3);
 	p1	:= new point'(offset ,offset,p2);
 	insert_shape(Zen(Canvas), new shape'(p1, white, maxPrio, null));
+
+
 	-- Reset the priority, objects will not be added to the canvas
 	maxPrio(iR) := 1;
 	
@@ -204,6 +207,8 @@ package body Ada_SDL_Main is
     myImage.width     := width;
     myImage.height    := height;
 
+	-- Initialise the offscreen, not really useful but it can't hurt
+
 	offScreenImage.basePixel := Ada_SDL_GetPixelPtr (offScreen);
 	offScreenImage.iR		:= iR;
 	offScreenImage.iG		:= iG;
@@ -217,33 +222,6 @@ package body Ada_SDL_Main is
 	offScreenImagePtr	:= new image'(offScreenImage);
     myImagePtr        := new Image'(myImage) ;
     ClipRect          := new Rectangle'((110,110,null),(120,120,null)) ;
-
--- 	p4  := new point'(90,90, null);
--- 	p3	:= new point'(50,90,p4);
---  	p2	:= new point'(90,90,null);
--- 	p1	:= new point'(50,50,p2);
--- 	DrawLine(MyImagePtr, p1, Blue);
--- -- 	
--- 	Polygone(myImagePtr,p1,Blue) ;
--- 	polygone(offScreenImagePtr, p1, maxPrio);
--- 
--- 	insert_shape(Zen(Polygone), new Shape'(p1,Blue, maxPrio, null));
--- 	increasePrio(maxPrio, iR, iG, iB, iA);
--- 	
--- 	p3	:=  new point'(80,90,null);
--- 	p2	:=  new point'(120,50,p3);
--- 	p1	:=  new point'(80,50,p2);
--- 	Polygone(myImagePtr,p1,Red) ;
--- 	Polygone(offscreenImagePtr,p1,maxPrio) ;
--- 	insert_shape(Zen(Polygone),  new Shape'(p1,Red, maxPrio, null));
--- 	increasePrio(maxPrio, iR, iG, iB, iA);
--- 
--- 	p2	:=  new point'(120,150,null);
--- 	p1	:=  new point'(120,120,p2);
--- 	CercleRempli(MyImagePtr, p1, p2, Blue);
--- 	CercleRempli(offscreenImagePtr, p1, p2, maxPrio);
--- 	insert_shape(Zen(FilledCircle), new shape'(p1, Blue, maxPrio, null));
--- 	increasePrio(maxPrio, iR, iG, iB, iA);
 
     -- Release exclusive access to the window's pixel memory, tell the system to
     --  update the entire window on the screen.
@@ -263,6 +241,7 @@ package body Ada_SDL_Main is
 
     event := Ada_SDL_AllocateEvent;
 
+	-- Preparing the mouse, we wont draw anything yet though
 	m7	:=	new point;
 	m6	:=	new point;
 	m5	:=	new point;
@@ -272,6 +251,7 @@ package body Ada_SDL_Main is
 	m1	:=  new point;
 	Cliprect := new Rectangle;
 	
+	-- Default color of the mouse is black
 	mouseColor := Black;
 
     loop
@@ -293,28 +273,15 @@ package body Ada_SDL_Main is
           SDL_WarpMouse (Uint16 (width / 2),  Uint16 (height / 2));
         end if;
 
--- 		if key = SDLK_p then
--- 			p3 := new point'(90, 90, null);
--- 			p2 := new point'(120, 90, p3);
--- 			p1 := new point'(120, 120, p2);
--- 			res := SDL_LockSurface (surface);
--- 			Polygone(myImagePtr,p1,Blue) ;
--- 			Polygone(offscreenImagePtr,p1,maxPrio) ;
--- 			insert_shape(Zen(Polygone),  new Shape'(p1,Blue, maxPrio, null));
--- 			increasePrio(maxPrio, iR, iG, iB, iA);
--- 			SDL_UnlockSurface (surface);
--- 			SDL_UpdateRect (surface);
--- 
--- 		end if;
       end if;
 
       if Ada_SDL_EventType (event) = SDL_MOUSEMOTION then
 
-		  --res := SDL_LockSurface (surface);
 
         -- The mouse moved
 
         Ada_SDL_GetMouseMotionEventParams (event, buttonStates, x, y, xrel, yrel);
+		-- Get the current position of the mouse
 		mx := integer(x);
 		my := integer(y);
 		mxrel := integer(xrel);
@@ -322,9 +289,12 @@ package body Ada_SDL_Main is
 		mousePoint := (mx-mxrel, my-myrel, null);-- Ancien position de souris
 
 
--- 		if not moveShape then
 				
-		-- Draw the mouse in it's new position
+	        if not doManyMouse then
+
+          -- We are only handling one mouse.
+
+				-- Draw the mouse in it's new position
 		if not Toolglassactive and then not moveShape then
 			-- Erase the old image of the mouse
 			 
@@ -338,6 +308,7 @@ package body Ada_SDL_Main is
 			end if;
 			
 		
+			-- if necessary repair the table of colors
 			if ColortableActive and then (mx >= ColorTablePos.x - 15 and mx <= ColortablePos.x + 105) and then (my >= ColortablePos.y - 15 and my <= ColorTablePos.y + 135) then
 				DrawColortable(MyImagePtr, ColortablePos.x, ColortablePos.y, ir, iG, iB, iA, ClipRect);
 			end if;
@@ -386,8 +357,9 @@ package body Ada_SDL_Main is
 			SDL_UpdateRect (surface,Sint32(mx), Sint32 (my), Uint32(15), Uint32(15)) ;
 			-- mouse drawn, phew...
 
-			-- Draw the Toolglass in it's new position
 		elsif not moveShape then
+			-- Draw the Toolglass in it's new position
+			
 			-- Delete the old picture of the toolglass
  			ClipRect.topLeft := mousepoint;
  			ClipRect.bottomRight := (mousepoint.x + 80, mousepoint.y + 161, null);
@@ -400,9 +372,7 @@ package body Ada_SDL_Main is
 			DrawToolGlass(MyImagePtr, mx, my, iR, iG, iB, iA); 
 			SDL_UnlockSurface (surface);
 			SDL_UpdateRect (surface, Sint32(mx), Sint32(my), Uint32(81), Uint32(161));
-		-- 			SDL_UnlockSurface (surface);
--- 			SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.x), Sint32(ClipRect.topLeft.y), Uint32(90), Uint32(170));
-
+	
 		elsif moveShape then
   			PCurr := ShapeMoved.PStart;
 		   	-- Erase old picture
@@ -416,6 +386,7 @@ package body Ada_SDL_Main is
    				PCurr.Y := PCurr.Y + myrel;
    				PCurr := PCurr.next;
 			end loop;
+			-- Draw the new picture
   			RedrawWindow(myImagePtr,Zen, ClipRect);
 		   	SDL_UnlockSurface (surface);
   			SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.X), Sint32 (ClipRect.topLeft.Y), Uint32(ClipRect.bottomRight.X - ClipRect.topLeft.X +1), Uint32(ClipRect.bottomRight.Y - ClipRect.topLeft.Y +1));
@@ -424,59 +395,7 @@ package body Ada_SDL_Main is
 
          end if ;
 		 -- Mouse, toolglass or Object (if moving an object) Drawn
-		 
 
-
--- 		  else
--- 		  -- Move a polygone!
--- 		  --
--- 		  PCurr := ShapeMoved.PStart;
--- 		  -- Erase old picture
--- 		  Initscanline(PCurr, Ymin, Ymax);
--- 		  X_MinMax(PCurr, Xmin, XMax);
--- 		  ClipRect.topLeft := (Xmin, Ymin, null);
--- 		  ClipRect.bottomRight := (Xmax, Ymax, null);
---   
--- 		  -- Update the points in the moved shape
--- 		  while PCurr /= null loop
--- 			 PCurr.X := PCurr.X + mxrel;
--- 			 PCurr.Y := PCurr.Y + myrel;
--- 			 PCurr := PCurr.next;
--- 		  end loop;
--- 
--- 		  
---   		  RedrawWindow(myImagePtr,Zen, ClipRect);
--- 		  --RedrawOffscreen(OffscreenImagePtr, Zen, ClipRect);
---   
--- 		  SDL_UnlockSurface (surface);
---   		  SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.X), Sint32 (ClipRect.topLeft.Y), Uint32(ClipRect.bottomRight.X - ClipRect.topLeft.X +1), Uint32(ClipRect.bottomRight.Y - ClipRect.topLeft.Y +1));
---  
--- 		  
--- 		  Initscanline(ShapeMoved.Pstart, Ymin, Ymax);
--- 		  X_MinMax(ShapeMoved.Pstart, Xmin, XMax);
---   		  ClipRect.topLeft := (Xmin, Ymin, null);
--- 		  ClipRect.bottomRight := (Xmax, Ymax, null);
--- 		  --Polygone(myImagePtr, ShapeMoved.Pstart, ShapeMoved.Color, ClipRect);
--- 		  RedrawWindow(myImagePtr,Zen, ClipRect);
--- 		  --RedrawOffscreen(OffscreenImagePtr, Zen, ClipRect);
--- 
--- 		SDL_UnlockSurface (surface);
--- 		SDL_UpdateRect (surface, Sint32(Xmin), Sint32 (Ymin), Uint32(Xmax - Xmin), Uint32(Ymax - Ymin));
--- 
--- 
--- 
--- 
--- 		end if;
-
-
-
-
-        if not doManyMouse then
-
-          -- We are only handling one mouse.
-
---          Put_Line ("Motion, x = " & Integer'Image (Integer (x)) & ", y = " & Integer'Image (Integer (y))                     & ", xrel = " & Integer'Image (Integer (xrel)) & ", yrel = " & Integer'Image (Integer (yrel)));
-			mx:=mx;
         else
 
           -- We are using multiple mice, loop for all mice, reading and displaying their state for each.
@@ -513,8 +432,8 @@ package body Ada_SDL_Main is
 			   
 			   DrawToolGlass(MyImagePtr, mx, my, iR, iG, iB, iA); 
 			   
-			   SDL_UnlockSurface (surface);
-			   SDL_UpdateRect (surface, Sint32(ToolglassPos.x), Sint32(ToolglassPos.y), 81, 161);
+ 			   SDL_UnlockSurface (surface);
+ 			   SDL_UpdateRect (surface, Sint32(ToolglassPos.x), Sint32(ToolglassPos.y), 81, 161);
 
 			   SDL_UnlockSurface (surface);
 			   SDL_UpdateRect (surface, Sint32(mx), Sint32(my), 81, 161);
@@ -535,12 +454,14 @@ package body Ada_SDL_Main is
 				-- We Clicked inside the Toolglass, YAY!--
 				put_line("Inuti Toolglass!");
 				if mx < ToolglassPos.x + 40 and then my < ToolglassPos.y + 40 then
+					-- Activate Drawline
 					ActiveFunction := True;
 					DrawlineActive := True;
 					mouseColor := Blue;
 					nPoint := new point'(mx, my, null);
 					put_line("Drawline");
 				elsif mx < ToolglassPos.x + 80 and then my < ToolglassPos.y + 40 then
+					-- Activate Polyline
 					ActiveFunction := True;
 					PolylineActive := True;
 					mouseColor := Blue;
@@ -548,6 +469,7 @@ package body Ada_SDL_Main is
 					nPoint := fPoint;
 					put_line("Polyline");
 				elsif mx < ToolglassPos.x + 40 and then my < ToolGlassPos.y + 80 then
+					-- Activate Circle
 					ActiveFunction := True;
 					CircleActive := True;
 
@@ -555,6 +477,7 @@ package body Ada_SDL_Main is
 
 					put_line("Cercle");
 				elsif mx < ToolglassPos.x + 80 and then my < ToolGlassPos.y + 80 then
+					-- Activate polygon
 					ActiveFunction := True;
 					PolygonActive := True;
 					mouseColor := Blue;
@@ -563,6 +486,7 @@ package body Ada_SDL_Main is
 
 					put_line("Polygone");
 				elsif mx < ToolglassPos.x + 40 and then my < ToolGlassPos.y + 120 then
+					-- Activate filled Circle
 					ActiveFunction := True;
 					FilledCircleActive := True;
 					mouseColor := Blue;
@@ -570,6 +494,7 @@ package body Ada_SDL_Main is
 
 					put_line("CercleRempli");
 				elsif mx < ToolglassPos.x + 80 and then my < ToolGlassPos.y + 120 then
+					-- Activate the table of colors
 					ToolGlassActive := False;
 					checkShape(OffscreenImagePtr, mx, my, Zen, ShapeMoved);
 					ClipRect.topLeft := (ToolglassPos.x, ToolGlassPos.Y, null);
@@ -613,7 +538,7 @@ package body Ada_SDL_Main is
 						ShapeMoved := null;
 						resortPrio(Zen, iR, iG, iB, iA, MaxPrio);
 						RedrawWindow(MyImagePtr, Zen, ClipRect);
-						RedrawOffScreen(OffscreenImagePtr, Zen, ClipRect);
+						RedrawOffScreen(OffscreenImagePtr, Zen);
 						DrawToolglass(MyImagePtr, ToolglassPos.x, ToolGlassPos.y, iR, iG, iB, iA);
 						SDL_UnlockSurface (surface);
 						SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.x), Sint32 (ClipRect.topLeft.y), Uint32(ClipRect.bottomRight.x - ClipRect.topLeft.x), Uint32(ClipRect.bottomRight.y - ClipRect.topLeft.y));
@@ -632,6 +557,7 @@ package body Ada_SDL_Main is
 						Initscanline(ShapeMoved.Pstart, Ymin, Ymax);
 						X_MinMax(ShapeMoved.Pstart, Xmin, XMax);
 
+						-- Calculate an appropriate clipping rectangle
 						if ShapeType = Circle or else ShapeType = FilledCircle then
 							Radius := max(abs (ShapeMoved.Pstart.X - ShapeMoved.Pstart.next.x), abs(ShapeMoved.Pstart.y - ShapeMoved.Pstart.next.y));
 							ClipRect.topLeft := (ShapeMoved.Pstart.X - Radius - 1, ShapeMoved.Pstart.y - Radius - 1, null);
@@ -640,13 +566,16 @@ package body Ada_SDL_Main is
 							ClipRect.topLeft := (Xmin, Ymin, null);
 							ClipRect.bottomRight := (Xmax + 1, Ymax + 1, null);
 						end if;
+
+						-- Increase the priority of the object
 						ShapeMoved.Identifier := maxPrio;
 						increasePrio(MaxPrio, iR, iG, iB, iA);
 						insert_Shape(Zen(ShapeType), ShapeMoved);
 						resortPrio(Zen, iR, iG, iB, iA, maxPrio);
 						
+						-- Redraw the object according to it's new priority
 						redrawWindow(MyImagePtr, Zen, ClipRect);
-						redrawOffscreen(OffscreenImagePtr, zen, null);
+						redrawOffscreen(OffscreenImagePtr, zen);
 						DrawToolglass(MyImagePtr, ToolglassPos.x, ToolGlassPos.y, iR, iG, iB, iA);
 						
 						SDL_UnlockSurface (surface);
@@ -657,28 +586,26 @@ package body Ada_SDL_Main is
 				end if;
 
 				-- We didn't Click inside the toolglass, or the toolglass is currently not active
+
 			elsif integer(buttonnb) = 1 and then Ada_SDL_EventType (event) = SDL_MOUSEBUTTONDOWN and then DrawlineActive then
 				-- We are drawing a line between two points, cool!
 				ActiveFunction:= False;
+				DrawlineActive := false;
 				mouseColor := Black;
 				nPoint.next := new point'(mx, my, null);
-				ClipRect.topLeft := (min(nPoint.x, nPoint.next.x), min(nPoint.y, nPoint.next.y), null);
-				ClipRect.bottomRight := (max(nPoint.x, nPoint.next.x), max(nPoint.y, nPoint.next.y), null);
-				RedrawWindow(MyImagePtr, Zen, ClipRect);
-				DrawlineActive := false;
+
+				-- Redraw the window
+ 				ClipRect.topLeft := (min(nPoint.x, nPoint.next.x), min(nPoint.y, nPoint.next.y), null);
+ 				ClipRect.bottomRight := (max(nPoint.x, nPoint.next.x), max(nPoint.y, nPoint.next.y), null);
+				
+				
 				Drawline(MyImagePtr, nPoint, CurrColor);
 				Drawline(OffscreenImagePtr, nPoint, maxPrio);
 				insert_shape(zen(Line), new shape'(nPoint, CurrColor, maxPrio, null));
  				increasePrio(maxPrio, iR, iG, iB, iA);	
-				DrawToolglass(MyImagePtr, ToolglassPos.x, ToolGlassPos.y, iR, iG, iB, iA);
+				DrawToolglass(MyImagePtr, ToolglassPos.x, ToolGlassPos.y, iR, iG, iB, iA, ClipRect);
 				Put_line("Line Drawn");
-				if nPoint = null then
-					put_line("Ajaj");
-				elsif nPoint.next = null then
-					put_line("Vafan!");
-				else
-					put_line("God's in his heaven all's well with the earth");
-				end if;
+
 				SDL_UnlockSurface (surface);
 				SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.x), Sint32 (ClipRect.topLeft.y), Uint32(ClipRect.bottomRight.x - ClipRect.topLeft.x), Uint32(ClipRect.bottomRight.y - ClipRect.topLeft.y));
 		
@@ -714,7 +641,7 @@ package body Ada_SDL_Main is
 				Radius := max(abs (nPoint.X - nPoint.next.x), abs(nPoint.y - nPoint.next.y));
 				ClipRect.topLeft := (nPoint.x - Radius, nPoint.y - Radius, null);
 				ClipRect.bottomRight := (nPoint.x + Radius, nPoint.y + Radius, null);
-  				RedrawWindow(MyImagePtr, Zen, ClipRect);
+  				--RedrawWindow(MyImagePtr, Zen, ClipRect);
 
 				Cercle(MyImagePtr, nPoint, nPoint.next, CurrColor);
 				Cercle(OffscreenImagePtr, nPoint, nPoint.next, maxPrio);
@@ -828,22 +755,23 @@ package body Ada_SDL_Main is
 			  PolylineActive := False;
 			  ActiveFunction := False;
 			  mouseColor := Black;
--- 			  nPoint.next := new point'(mx, my, null);
--- 			  nPoint := nPoint.next;
 
+			  -- Redraw the window and calculate the clipRect
 			  Initscanline(fPoint, Ymin, Ymax);
 			  X_MinMax(fPoint, Xmin, XMax);
 			  ClipRect.topLeft := (Xmin, Ymin, null);
 			  ClipRect.bottomRight := (Xmax, Ymax, null);
 			  RedrawWindow(MyImagePtr, Zen, ClipRect);
 
+			  -- Draw the Polyline
 			  polyline(MyImagePtr, fPoint, CurrColor);
 			  polyline(OffscreenImagePtr, fPoint, maxPrio);
 			  insert_Shape(Zen(Polyline), new Shape'(fPoint, CurrColor, maxPrio, null));
 			  increasePrio(maxPrio, iR, iG, iB, iA);
-			  DrawToolglass(MyImagePtr, ToolglassPos.x, ToolglassPos.y, iR, iG, iB, iA);
+			  DrawToolglass(MyImagePtr, ToolglassPos.x, ToolglassPos.y, iR, iG, iB, iA, ClipRect);
+			  
 			  SDL_UnlockSurface (surface);
-			  SDL_UpdateRect (surface);--, Sint32(ClipRect.topLeft.x), Sint32 (ClipRect.topLeft.y), Uint32(ClipRect.bottomRight.x - ClipRect.topLeft.x), Uint32(ClipRect.bottomRight.y - ClipRect.topLeft.y));
+			  SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.x), Sint32 (ClipRect.topLeft.y), Uint32(ClipRect.bottomRight.x - ClipRect.topLeft.x), Uint32(ClipRect.bottomRight.y - ClipRect.topLeft.y));
 
 		  elsif integer(buttonnb) = 3 and then Ada_SDL_EventType (event) = SDL_MOUSEBUTTONDOWN and then PolygonActive then
 			  -- Stop Polygone
@@ -851,19 +779,23 @@ package body Ada_SDL_Main is
 			  ActiveFunction := False;
 			  mouseColor := Black;
 			  
+			  -- Redraw the window
 			  Initscanline(fPoint, Ymin, Ymax);
 			  X_MinMax(fPoint, Xmin, XMax);
 			  ClipRect.topLeft := (Xmin, Ymin, null);
 			  ClipRect.bottomRight := (Xmax, Ymax, null);
 			  RedrawWindow(MyImagePtr, Zen, ClipRect);
 			  
+			  -- Draw the polygon
 			  polygone(MyImagePtr, fPoint, CurrColor);
 			  polygone(OffscreenImagePtr, fPoint, maxPrio);
 			  insert_Shape(Zen(Polygone), new Shape'(fPoint, CurrColor, maxPrio, null));
 			  increasePrio(maxPrio, iR, iG, iB, iA);
 			  DrawToolglass(MyImagePtr, ToolglassPos.x, ToolglassPos.y, iR, iG, iB, iA);
+
+
 			  SDL_UnlockSurface (surface);
-			  SDL_UpdateRect (surface);
+			  SDL_UpdateRect (surface, Sint32(ClipRect.topLeft.x), Sint32 (ClipRect.topLeft.y), Uint32(ClipRect.bottomRight.x - ClipRect.topLeft.x), Uint32(ClipRect.bottomRight.y - ClipRect.topLeft.y));
 
 
 
@@ -887,6 +819,8 @@ package body Ada_SDL_Main is
 
       end if;
     end loop;
+
+	
 
     -- Preparing to end the program: release all memory allocated for this program.
 

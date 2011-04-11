@@ -21,11 +21,11 @@ package Event_Handling is
 
 	procedure RedrawWindow(	Window		: ImagePtr;
 							TabObj		: Nirvana;
-							Clipper		: RectanglePtr);
+							Clipper		: RectanglePtr := null);
 
    	procedure RedrawOffscreen(	Window		: ImagePtr;
 							TabObj		: Nirvana;
-							Clipper		: RectanglePtr);
+							Clipper		: RectanglePtr := null);
 
 	-- Procedure to locate an objetc in the zen
 	procedure findShape(Id: PixelPtr; Scene: Nirvana ; Res : out ShapePtr);
