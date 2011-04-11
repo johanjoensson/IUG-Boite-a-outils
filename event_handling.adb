@@ -1,10 +1,11 @@
-with Ada_SDL_Video,Ada.Unchecked_Deallocation, Interfaces.C, Gr_Shapes, Drawline_Pkg, Aux_Fct, Ada.Text_Io;
-use Ada_SDL_Video, Ada_SDL_Video.PixelPtrPkg, Interfaces.C, Gr_Shapes, Drawline_Pkg, Aux_Fct, Ada.Text_Io;
+with Ada_SDL_Video,Ada.Unchecked_Deallocation, Interfaces.C, Gr_Shapes, Drawline_Pkg, Circle_Pkg, Aux_Fct, Ada.Text_Io;
+use Ada_SDL_Video, Ada_SDL_Video.PixelPtrPkg, Interfaces.C, Gr_Shapes, Drawline_Pkg, Circle_Pkg, Aux_Fct, Ada.Text_Io;
 
 package body Event_Handling is
 
 	procedure free is new Ada.Unchecked_Deallocation (Shape, ShapePtr);
-   	procedure insert_shape(Shape_Table: in out ShapePtr; Shape: in ShapePtr) is
+   	
+	procedure insert_shape(Shape_Table: in out ShapePtr; Shape: in ShapePtr) is
 		-- Insert a shape into the Scene (called Shape_Table), the table is sorted in order of Identifier
 		-- The insertion will never unsort the table, 
 		-- unless the Identifier is not unique (god only knows what might happen then)
@@ -27,22 +28,31 @@ package body Event_Handling is
 	   end if;
 	   end insert_shape;
 
-	   function lowestPriority(Line, Polyline, Polygone : pixel; iR, iG, iB, iA : Integer) return pixel is
+	   function lowestPriority(Line, Polyline, Polygone, Circle, FCircle : pixel; iR, iG, iB, iA : Integer) return pixel is
 		   -- Return the lowest priority of the three entered.
 		   -- Requires: All Identifiers are unique.
 	   begin
  
-		   if (Line(iA) /= 0) and then (Line(iB) < Polygone(iB) and Line(iB) < Polyline(iB)) and then (Line(iG) < Polygone(iG) and Line(iG) < Polyline(iG)) and then (Line(iR) < Polygone(iR) and Line(iR) < Polyline(iR)) then 
+		   if (Line(iA) /= 0) and then (Line(iB) <= Polygone(iB) and Line(iB) <= Polyline(iB) and Line(iB) <= Circle(iB) and Line(iB) <= FCircle(iB)) and then (Line(iG) <= Polygone(iG) and Line(iG) <= Polyline(iG) and Line(iG) <= Circle(iG) and Line(iG) <= FCircle(iG)) and then (Line(iR) <= Polygone(iR) and Line(iR) <= Polyline(iR) and Line(iR) <= Circle(iR) and Line(iR) <= FCircle(iR)) then 
 
 		   return Line;
 
-	   elsif (PolyLine(iA)/= 0) and then (PolyLine(iB) < Polygone(iB) and PolyLine(iB) < Line(iB)) and then (PolyLine(iG) < Polygone(iG) and PolyLine(iG) < Line(iG)) and then (PolyLine(iR) < Polygone(iR) and PolyLine(iR) < Line(iR)) then 
+	   elsif (PolyLine(iA) /= 0) and then (PolyLine(iB) <= Polygone(iB) and PolyLine(iB) <= Line(iB) and PolyLine(iB) <= Circle(iB) and PolyLine(iB) <= FCircle(iB)) and then (PolyLine(iG) <= Polygone(iG) and PolyLine(iG) <= Line(iG) and PolyLine(iG) <= Circle(iG) and PolyLine(iG) <= FCircle(iG)) and then (PolyLine(iR) <= Polygone(iR) and PolyLine(iR) <= Line(iR) and PolyLine(iR) <= Circle(iR) and PolyLine(iR) <= FCircle(iR)) then 
 
 		   return PolyLine;
 
+	   elsif (Polygone(iA) /= 0) and then (Polygone(iB) <= PolyLine(iB) and PolyGone(iB) <= Line(iB) and Polygone(iB) <= Circle(iB) and Polygone(iB) <= FCircle(iB)) and then (Polygone(iG) <= PolyLine(iG) and Polygone(iG) <= Line(iG) and Polygone(iG) <= Circle(iG) and Polygone(iG) <= FCircle(iG)) and then (Polygone(iR) <= PolyLine(iR) and Polygone(iR) <= Line(iR) and Polygone(iR) <= Circle(iR) and Polygone(iR) <= FCircle(iR)) then 
+		   
+		   return Polygone;
+
+	   elsif (Circle(iA) /= 0) and then (Circle(iB) <= PolyLine(iB) and Circle(iB) <= Line(iB) and Circle(iB) <= Polygone(iB) and Circle(iB) <= FCircle(iB)) and then (Circle(iG) <= PolyLine(iG) and Circle(iG) <= Line(iG) and Circle(iG) <= Polygone(iG) and Circle(iG) <= FCircle(iG)) and then (Circle(iR) <= PolyLine(iR) and Circle(iR) <= Line(iR) and Circle(iR) <= Polygone(iR) and Circle(iR) <= FCircle(iR)) then
+		   
+		  return Circle;
+
 	   else
 
-		   return Polygone;
+		  return FCircle; 
+
 
 	   end if;
 	   end lowestPriority;
@@ -54,8 +64,8 @@ package body Event_Handling is
 
 		pPixel	: PixelPtr	:= Window.basePixel;
 		PCour	: PointPtr;
-		CurrLine, CurrPolyline, CurrPolygone	: ShapePtr;
-		lowestPrio, LinePrio, PolyLinePrio,PolygonePrio : Pixel;
+		CurrLine, CurrPolyline, CurrPolygone, CurrCircle, CurrCircleF	: ShapePtr;
+		lowestPrio, LinePrio, PolyLinePrio,PolygonePrio, CirclePrio, CircleFPrio : Pixel;
 		nullPrio		: Pixel			:= (255, 255, 255, 255);
 		iR, iG, iB, iA	: integer;
    begin
@@ -76,9 +86,11 @@ package body Event_Handling is
 	   CurrLine := TabObj(Line);
 	   CurrPolyLine := TabObj(Polyline);
 	   CurrPolygone := TabObj(Polygone);
+	   CurrCircle	:= TabObj(Circle);
+	   CurrCircleF	:= TabObj(FilledCircle);
 	   PCour := null;
 
-	   while not (CurrLine = null and CurrPolyLine = null and CurrPolygone = null) loop
+	   while not (CurrLine = null and CurrPolyLine = null and CurrPolygone = null and currCircle = null and CurrCircleF = null) loop
 		   -- When one of our pointers does not point anywhere (it is null)
 		   -- give it an identifier > any other identifier
 		   if CurrLine = null then
@@ -98,21 +110,41 @@ package body Event_Handling is
 		   else
 			   PolygonePrio := CurrPolygone.Identifier;
 		   end if;
+		  
+		   if CurrCircle = null then
+			   CirclePrio := nullPrio;
+		   else
+			   CirclePrio := CurrCircle.Identifier;
+		   end if;
+		  
+		   if CurrCircleF = null then
+			   CircleFPrio := nullPrio;
+		   else
+			   CircleFPrio := CurrCircleF.Identifier;
+		   end if;
 
-		   lowestPrio := lowestPriority(LinePrio, PolyLinePrio, PolygonePrio, iR, iG, iB, iA);
 
-		   if LinePrio = lowestPrio then
+		   lowestPrio := lowestPriority(LinePrio, PolyLinePrio, PolygonePrio, CirclePrio, CircleFPrio, iR, iG, iB, iA);
+
+		   if LinePrio(iA) /= 0 and then LinePrio = lowestPrio then
 			   PCour := CurrLine.PStart;
 			   DrawLine(Window, PCour, CurrLine.Color, Clipper);
 			   CurrLine := CurrLine.next;
-		   elsif PolyLinePrio = lowestPrio then
+		   elsif PolylinePrio(iA) /= 0 and then PolyLinePrio = lowestPrio then
 			   PCour :=CurrPolyLine.PStart;
 			   Polyline(Window, PCour, CurrPolyLine.Color, Clipper);
 			   CurrPolyLine := CurrPolyLine.next;
-		   elsif PolygonePrio = lowestPrio then
+		   elsif PolygonePrio(iA) /= 0 and then PolygonePrio = lowestPrio then
 			   PCour :=CurrPolygone.PStart;
 			   Polygone(Window, PCour, CurrPolygone.Color, Clipper);
 			   CurrPolygone := CurrPolygone.next;
+		   elsif CirclePrio(iA) /= 0 and then CirclePrio = lowestPrio then
+			   Cercle(Window, CurrCircle.PStart, CurrCircle.Pstart.Next, CurrCircle.Color);
+			   CurrCircle := CurrCircle.next;
+		   elsif CircleFPrio(iA) /= 0 and then CircleFPrio = lowestPrio then
+			   CercleRempli(Window, CurrCircleF.Pstart, CurrCircleF.PStart.next, CurrCircleF.Color, Clipper);
+			   CurrCircleF := CurrCircleF.next;
+
 		   end if;
 
 
@@ -125,8 +157,8 @@ package body Event_Handling is
 
 		pPixel	: PixelPtr	:= Window.basePixel;
 		PCour	: PointPtr;
-		CurrLine, CurrPolyline, CurrPolygone	: ShapePtr;
-		lowestPrio, LinePrio, PolyLinePrio,PolygonePrio : Pixel;
+		CurrLine, CurrPolyline, CurrPolygone, CurrCircle, CurrCircleF	: ShapePtr;
+		lowestPrio, LinePrio, PolyLinePrio,PolygonePrio, CirclePrio, CircleFPrio : Pixel;
 		nullPrio	: Pixel		:= (255, 255, 255, 255);
 		iR, iG, iB, iA	: Integer;
    begin
@@ -147,12 +179,13 @@ package body Event_Handling is
 	   CurrLine := TabObj(Line);
 	   CurrPolyLine := TabObj(Polyline);
 	   CurrPolygone := TabObj(Polygone);
+	   CurrCircle	:= TabObj(Circle);
+	   CurrCircleF	:= TabObj(FilledCircle);
 	   PCour := null;
 
-	   while not (CurrLine = null and CurrPolyLine = null and CurrPolygone = null) loop
+	   while not (CurrLine = null and CurrPolyLine = null and CurrPolygone = null and CurrCircle = null and CurrCircleF = null) loop
 		   -- When one of our pointers does not point anywhere (it is null)
 		   -- give it an identifier > any other identifier
---		   Put_line("Loop!!!");
 		   if CurrLine = null then
 			   LinePrio := nullPrio;
 		   else
@@ -170,26 +203,41 @@ package body Event_Handling is
 		   else
 			   PolygonePrio := CurrPolygone.Identifier;
 		   end if;
+		  
+		   if CurrCircle = null then
+			   CirclePrio := nullPrio;
+		   else
+			   CirclePrio := CurrCircle.Identifier;
+		   end if;
+		  
+		   if CurrCircleF = null then
+			   CircleFPrio := nullPrio;
+		   else
+			   CircleFPrio := CurrCircleF.Identifier;
+		   end if;
 
-		   lowestPrio := lowestPriority(LinePrio, PolyLinePrio, PolygonePrio, iR, iG, iB, iA);
+
+
+		   lowestPrio := lowestPriority(LinePrio, PolyLinePrio, PolygonePrio, CirclePrio, CircleFPrio, iR, iG, iB, iA);
 
 		   if LinePrio = lowestPrio then
---			   put_line(" Linje ");
 			   PCour := CurrLine.PStart;
 			   DrawLine(Window, PCour, CurrLine.Identifier, Clipper);
 			   CurrLine := CurrLine.next;
 		   elsif PolyLinePrio = lowestPrio then
---			   put_line(" Polylinje ");
 			   PCour :=CurrPolyLine.PStart;
 			   Polyline(Window, PCour, CurrPolyLine.Identifier, Clipper);
 			   CurrPolyLine := CurrPolyLine.next;
 		   elsif PolygonePrio = lowestPrio then
---			   put_line(" Polygon ");
 			   PCour :=CurrPolygone.PStart;
 			   Polygone(Window, PCour, CurrPolygone.Identifier, Clipper);
 			   CurrPolygone := CurrPolygone.next;
-		   else
-			   Put_line(" HELVETE!!!!! ");
+		   elsif CirclePrio = lowestPrio then
+			   Cercle(Window, CurrCircle.PStart, CurrCircle.Pstart.Next, CurrCircle.Identifier);
+			   CurrCircle := CurrCircle.next;
+		   elsif CircleFPrio = lowestPrio then
+			   CercleRempli(Window, CurrCircleF.Pstart, CurrCircleF.PStart.next, CurrCircleF.Identifier, Clipper);
+			   CurrCircleF := CurrCircleF.next;
 		   end if;
 
 
@@ -204,7 +252,7 @@ package body Event_Handling is
 	   Curr: ShapePtr;
    begin
 	   -- Loop through all the object in the scene.
-	   for i in Line..Polygone loop
+	   for i in Line..FilledCircle loop
 		   Curr := Scene(i);
 		   while curr /= null loop
 			   if Curr.Identifier = Id.all then
@@ -227,26 +275,30 @@ package body Event_Handling is
          pPtr:= offscreenImage.basePixel + ptrdiff_t (offscreenImage.width * y + x);
 	   findShape(pPtr, Zen, res); 
 		 if res /= null then
-			 --put("Korrekt!");
-			 put_line(integer'image(integer(res.color(0))) & " :" & integer'image(integer(res.color(1))) & " :" & integer'image(integer(res.color(2)))& " :" & integer'image(integer(res.color(3))));
+			 put("Korrekt!");
+			 --put_line(integer'image(integer(res.color(0))) & " :" & integer'image(integer(res.color(1))) & " :" & integer'image(integer(res.color(2)))& " :" & integer'image(integer(res.color(3))));
 		 else
-			 --put("Inte korrekt!");
-			 put_line(integer'image(integer(pPtr.all(0))) & " :" & integer'image(integer(pPtr.all(1))) & " :" & integer'image(integer(pPtr.all(2))));
+			 put("Inte korrekt!");
+			 --put_line(integer'image(integer(pPtr.all(0))) & " :" & integer'image(integer(pPtr.all(1))) & " :" & integer'image(integer(pPtr.all(2))));
 		 end if;
    end CheckShape;
 
-   procedure eraseShape(id : PixelPtr; Scene : in out Nirvana; Obj : out ShapePtr) is
+   procedure eraseShape(id : PixelPtr; Scene : in out Nirvana; Obj : out ShapePtr; erase : Boolean := true) is
 	   Prec, Curr, Next	: ShapePtr;
    begin
 	   -- Loop through all the object in the scene.
-	   for i in Line..Polygone loop
+	   for i in Line..FilledCircle loop
 		   Curr := Scene(i);
+		   Prec := null;
 		   while curr /= null loop
 			   Next := Curr.next;
 			   if Curr.Identifier = Id.all then
 				   -- Object found, return object!
 				   Obj := Curr;
-				   free(Curr);
+				   Obj.next := null;
+				   if erase then
+					   free(curr);
+				   end if;
 				   if Prec = null then
 					   -- First shape in the list is to be removed
 					   Scene(i) := next;
@@ -262,18 +314,17 @@ package body Event_Handling is
 	   -- no object was found nothing to do
    end eraseShape;
 
-   procedure RemoveShape(offscreenImage: ImagePtr; x,y : Integer; Zen: in out nirvana) is
+   procedure RemoveShape(offscreenImage: ImagePtr; x,y : Integer; Zen: in out nirvana; res : out ShapePtr) is
 	   pPtr	: PixelPtr;
-	   res	: ShapePtr;
    begin
 	   pPtr:= offscreenImage.basePixel + ptrdiff_t (offscreenImage.width * y + x);
-	   eraseShape(pPtr, Zen, Res);
-	   findShape(pPtr, Zen, Res);
-	   if res = null then
-		   put_line("Misslyckat!");
-	   else
-		   put_line("Tog bort figuren!");
-	   end if;
+	   eraseShape(pPtr, Zen, Res, false);
+-- 	   findShape(pPtr, Zen, Res);
+ 	   if res /= null then
+ 		   put_line("Misslyckat!");
+ 	   else
+ 		   put_line("Tog bort figuren!");
+ 	   end if;
    end RemoveShape; 
 
    procedure increasePrio (prio: in out pixel; iR, iG, iB, iA : Integer) is
@@ -295,23 +346,48 @@ package body Event_Handling is
 	   end if;
    end increasePrio;
 
-   procedure resortPrio(scene: in out nirvana; iR, iG, iB, iA : integer) is
-	   maxPrio	: Pixel := (0, 0, 0, 0);
-	   currLine, currPolyline, currPolygone	: ShapePtr;
-	   lowestPrio, linePrio, polylinePrio, polygonePrio	: Pixel;
+   procedure resortPrio(scene: in out nirvana; iR, iG, iB, iA : integer ; MaxPrio : out Pixel) is
+	   currLine, currPolyline, currPolygone, CurrCircle, CurrCircleF	: ShapePtr;
+	   lowestPrio, linePrio, polylinePrio, polygonePrio, CirclePrio, CircleFPrio	: Pixel;
 	   nullPrio : Pixel := (255, 255, 255, 255);
    begin
+	   maxPrio := (0, 0, 0, 0);
 	   nullPrio(iA) := 0;
 	   CurrLine := scene(Line);
 	   CurrPolyLine := scene(Polyline);
 	   CurrPolygone := scene(Polygone);
+	   CurrCircle	:= Scene(Circle);
+	   CurrCircleF	:= Scene(FilledCircle);
 
-	   linePrio := currLine.Identifier;
-	   polylinePrio := currPolyline.Identifier;
-	   polygonePrio := currPolygone.Identifier;
+	   if currline = null then
+		   linePrio := nullprio;
+	   else
+		   linePrio := currLine.Identifier;
+	   end if;
+	   if currPolyline = null then
+		   polylinePrio := nullprio;
+	   else
+		   polylinePrio := currPolyline.Identifier;
+	   end if;
+	   if currPolygone = null then
+		   polygonePrio := nullPrio;
+	   else
+		   polygonePrio := currPolygone.Identifier;
+	   end if;
+	   if CurrCircle = null then
+		   CirclePrio := nullPrio;
+	   else
+		   CirclePrio := CurrCircle.Identifier;
+	   end if;
+	   if CurrCircleF = null then
+		   CircleFPrio := nullPrio;
+	   else
+		   CircleFPrio := CurrCircleF.Identifier;
+	   end if;
 	   maxPrio(iA) := 255;
+	   maxPrio(iR) := 1;
 	   
-	   while not (CurrLine = null and CurrPolyLine = null and CurrPolygone = null) loop
+	   while not (CurrLine = null and CurrPolyLine = null and CurrPolygone = null and currCircle = null and currCircleF = null) loop
 		   -- When one of our pointers does not point anywhere (it is null)
 		   -- give it an identifier > any other identifier
 		   if CurrLine = null then
@@ -332,24 +408,141 @@ package body Event_Handling is
 			   PolygonePrio := CurrPolygone.Identifier;
 		   end if;
 
-		   lowestPrio := lowestPriority(LinePrio, polylinePrio, polygonePrio, iR, iG, iB, iA);
- 	   if LinePrio = lowestPrio then
-		   CurrLine.Identifier := maxPrio;
-		   increasePrio(maxPrio, iR, iG, iB, iA);
-		   CurrLine := CurrLine.next;
- 		   elsif PolyLinePrio = lowestPrio then
+		   if CurrCircle = null then
+			   CirclePrio := nullPrio;
+		   else
+			   CirclePrio := CurrCircle.Identifier;
+		   end if;
+		  
+		   if CurrCircleF = null then
+			   CircleFPrio := nullPrio;
+		   else
+			   CircleFPrio := CurrCircleF.Identifier;
+		   end if;
+
+		   lowestPrio := lowestPriority(LinePrio, polylinePrio, polygonePrio, CirclePrio, CircleFPrio, iR, iG, iB, iA);
+		   if LinePrio(iA) /= 0 and then LinePrio = lowestPrio then
+			   CurrLine.Identifier := maxPrio;
+			   increasePrio(maxPrio, iR, iG, iB, iA);
+			   CurrLine := CurrLine.next;
+		   elsif PolylinePrio(iA)/= 0 and then PolyLinePrio = lowestPrio then
 			   currPolyline.Identifier := maxprio;
 			   increasePrio(maxPrio, iR, iG, iB, iA);
- 			   CurrPolyLine := CurrPolyLine.next;
- 		   elsif PolygonePrio = lowestPrio then
+			   CurrPolyLine := CurrPolyLine.next;
+		   elsif polygonePrio(iA) /= 0 and then PolygonePrio = lowestPrio then
 			   currPolygone.Identifier := maxPrio;
 			   increasePrio(maxPrio, iR, iG, iB, iA);
- 			   CurrPolygone := CurrPolygone.next;
- 		   else
- 			   Put_line(" HELVETE!!!!! ");
- 		   end if;
+			   CurrPolygone := CurrPolygone.next;
+		   elsif CirclePrio(iA) /= 0 and then CirclePrio = lowestPrio then
+			   CurrCircle.Identifier := maxPrio;
+			   increasePrio(maxPrio, iR, iG, iB, iA);
+			   currCircle := currCircle.next;
+		   elsif CircleFPrio(iA) /= 0 and then CircleFPrio = lowestPrio then
+			   CurrCircleF.Identifier := maxPrio;
+			   increasePrio(maxPrio, iR, iG, iB, iA);
+			   currCircleF := currCircleF.next;
+		   end if;
+		   put_line("Sorterar, MaxPrio =" & integer'image(integer(maxPrio(iR))));
 	   end loop;
- 
    end resortPrio;
+
+function ObjectType(id : PixelPtr; scene : Nirvana) return OBJECT is
+ Curr: ShapePtr;
+begin
+	   -- Loop through all the object in the scene.
+	   for i in Line..FilledCircle loop
+		   Curr := Scene(i);
+		   while curr /= null loop
+			   if Curr.Identifier = Id.all then
+				   -- Object found, return object!
+				   return i;
+			   end if;
+			   Curr := Curr.next;
+		   end loop;
+	   end loop;
+	   -- no object was found
+	return Canvas;
+end ObjectType;
+
+function whatObject(offscreenImage: ImagePtr; x,y : Integer; Zen: nirvana) return OBJECT is
+	pPtr : PixelPtr;
+	res : OBJECT;
+begin
+	 pPtr:= offscreenImage.basePixel + ptrdiff_t (offscreenImage.width * y + x);
+	 res := ObjectType(pPtr, Zen);
+	 return res;
+end whatObject;
+
+procedure DrawToolglass(MyImagePtr : ImagePtr; mousex, mousey : Integer; iR, iG, iB, iA : Integer; Clipper : RectanglePtr := null)is
+	Tool1, Tool2, Tool3, Tool4,Tool5, Tool6, Tool7, Tool8,Tool9, Tool10, Tool11, Tool12,Tool13, Tool14, Tool15, Tool16,Tool17, Tool18, Tool19, Tool20,Tool21, Tool22, Tool23, Tool24,Tool25, Tool26, Tool27, Tool28 : PointPtr := new point;
+	width : Integer := MyImagePtr.width;
+	height : Integer := MyImagePtr.height;
+	Black, Green, Red, Blue	: Pixel := (0,0,0,0);
+begin
+	if iA /= -1 then
+		Black(iA)	:= 128;
+		Green(iA)	:= 128;
+		Red(iA)		:= 128;
+		Blue(iA)	:= 128;
+	end if;
+	Red(iR)		:= 255;
+	Green(iG)	:= 255;
+	Blue(iB)	:= 255;
+
+            Tool5.all:= (Mousex,Min(Height,Mousey),null) ;
+            Tool4.all:= (Mousex,Min(Height,Mousey+160),Tool5) ;
+            Tool3.all:= (Mousex+80,Min(Height,Mousey+160),Tool4) ;
+            Tool2.all:= (Mousex+80,Min(Height,Mousey),Tool3) ;
+            Tool1.all:= (Mousex,Min(Height,Mousey),Tool2) ;
+            Polyline(MyImagePtr,Tool1,black, Clipper) ;
+            DrawLine(MyImagePtr,new point'(Mousex+5,Min(Height,Mousey+35), new point'(Mousex+35,Min(Height,Mousey+5), null)),black, Clipper) ;
+            Tool6.all:= (Mousex+45,Min(Height,Mousey+18),null) ;
+            Tool7.all:= (Mousex+53,Min(Height,Mousey+10),Tool6) ;
+            Tool8.all:= (Mousex+75,Min(Height,Mousey+35),Tool7) ;
+            Polyline(MyImagePtr,Tool8,Black, Clipper) ;
+            if Mousey+75 <= Height then
+               Cercle(MyImagePtr, new point'(Mousex+20,Mousey+60, null), new point'(mousex + 35, mousey + 60, null),black) ;
+            end if ;
+            if Mousey+115 <= Height then
+               CercleRempli(MyImagePtr,new point'(Mousex+20,Mousey+100, null), new point'(mousex + 35, mousey + 100, null),black, Clipper) ;
+            end if ;
+            Tool9.all:= (Mousex+45,Min(Height,Mousey+50),null) ;
+            Tool10.all:= (Mousex+75,Min(Height,Mousey+50),Tool9) ;
+            Tool11.all:= (Mousex+75,Min(Height,Mousey+70),Tool10) ;
+            Tool12.all:= (Mousex+45,Min(Height,Mousey+70),Tool11) ;
+            Polygone(MyImagePtr,Tool12,black, Clipper) ;
+            Drawline(MyImagePtr,new point'(Mousex+60,Min(Height,Mousey+80),new point'(Mousex+60,Min(Height,Mousey+120), null)),black, Clipper) ;
+            Drawline(MyImagePtr,new point'(Mousex+40,Min(Height,Mousey+100), new point'(Mousex+80,Min(Height,Mousey+100), null)),black, Clipper) ;
+            Tool13.all:= (Mousex+43,Min(Height,Mousey+83),null) ;
+            Tool14.all:= (Mousex+57,Min(Height,Mousey+83),Tool13) ;
+            Tool15.all:= (Mousex+57,Min(Height,Mousey+97),Tool14) ;
+            Tool16.all:= (Mousex+43,Min(Height,Mousey+97),Tool15) ;
+            Polygone(MyImagePtr,Tool16,Red, Clipper) ;
+            Tool17.all:= (Mousex+63,Min(Height,Mousey+83),null) ;
+            Tool18.all:= (Mousex+77,Min(Height,Mousey+83),Tool17) ;
+            Tool19.all:= (Mousex+77,Min(Height,Mousey+97),Tool18) ;
+            Tool20.all:= (Mousex+63,Min(Height,Mousey+97),Tool19) ;
+            Polygone(MyImagePtr,Tool20,green, Clipper) ;
+            Tool21.all:= (Mousex+63,Min(Height,Mousey+103),null) ;
+            Tool22.all:= (Mousex+77,Min(Height,Mousey+103),Tool21) ;
+            Tool23.all:= (Mousex+77,Min(Height,Mousey+117),Tool22) ;
+            Tool24.all:= (Mousex+63,Min(Height,Mousey+117),Tool23) ;
+            Polygone(MyImagePtr,Tool24,black, Clipper) ;
+            Tool25.all:= (Mousex+43,Min(Height,Mousey+103),null) ;
+            Tool26.all:= (Mousex+57,Min(Height,Mousey+103),Tool25) ;
+            Tool27.all:= (Mousex+57,Min(Height,Mousey+117),Tool26) ;
+            Tool28.all:= (Mousex+43,Min(Height,Mousey+117),Tool27) ;
+            Polygone(MyImagePtr,Tool28,blue, Clipper) ;
+            Drawline(MyImagePtr,new point'(Mousex+5,Min(Height,Mousey+125), new point'(Mousex+35,Min(Height,Mousey+155), null)),black, Clipper) ;
+            Drawline(MyImagePtr, new point'(Mousex+5,Min(Height,Mousey+155), new point'(Mousex+35,Min(Height,Mousey+125), null)),black, Clipper) ;
+            Drawline(MyImagePtr, new point'(Mousex+60,Min(Height,Mousey+125), new point'(Mousex+60,Min(Height,Mousey+155), null)),black, Clipper) ;
+            Drawline(MyImagePtr, new point'(Mousex+50,Min(Height,Mousey+135), new point'(Mousex+60,Min(Height,Mousey+125), null)),black, clipper) ;
+            Drawline(MyImagePtr, new point'(Mousex+70,Min(Height,Mousey+135), new point'(Mousex+60,Min(Height,Mousey+125), null)),black, Clipper) ;
+            DrawLine(MyImagePtr, new point'(Mousex+40,Min(Height,Mousey), new point'(Mousex+40,Min(Height,Mousey+160), null)),black, Clipper) ;
+            DrawLine(MyImagePtr, new point'(Mousex,Min(Height,Mousey+40), new point'(Mousex+80,Min(Height,Mousey+40), null)),black, Clipper) ;
+            DrawLine(MyImagePtr, new point'(Mousex,Min(Height,Mousey+80), new point'(Mousex+80,Min(Height,Mousey+80), null)),black, Clipper) ;
+            DrawLine(MyImagePtr, new point'(Mousex,Min(Height,Mousey+120), new point'(Mousex+80,Min(Height,Mousey+120), null)),black, Clipper) ;
+
+end DrawToolglass;
 
 end Event_Handling;

@@ -1,5 +1,5 @@
-with Ada_SDL_Video, Ada.Unchecked_Deallocation, Gr_Shapes ;
-use Ada_SDL_Video, Ada_SDL_Video.PixelPtrPkg, Gr_Shapes ;
+with Ada_SDL_Video, Ada.Unchecked_Deallocation, Gr_Shapes, Ada.Text_Io ;
+use Ada_SDL_Video, Ada_SDL_Video.PixelPtrPkg, Gr_Shapes, Ada.Text_Io ;
 
 package body Aux_Fct is
 	 procedure Liberer is new Ada.Unchecked_Deallocation (Cote,CotePtr);
@@ -17,19 +17,9 @@ package body Aux_Fct is
 	   iA	: Integer := currentImage.iA;
    begin
 	   -- update all the values, one channel at a time
-		if color(iA) /= 0 and then color(iA) /= 255 then
- 			if integer(color(iR)) /= 0 then
- 				pPixel(iR) := (color(iA))*pPixel(iR) + (255 - color(iA)+1)* color(iR);
- 			end if;
- 			if integer(color(iG)) /= 0 then
- 				pPixel(iG) := (color(iA))*pPixel(iG) + (255 - color(iA)+1)* color(iG);
- 			end if;
- 			if integer(color(iB)) /= 0 then
- 				pPixel(iB) := (color(iA))*pPixel(iB) + (255 - color(iA)+1)* color(iB); 
- 			end if;
-		elsif color(iA) = 255 then
-			pPixel.all:= color;
-		end if;
+				pPixel(iR) := 255*(255 - color(iA))*pPixel(iR) + (255*color(iA)*color(iR));
+				pPixel(iG) := 255*(255 - color(iA))*pPixel(iG) + (255*color(iA)*color(iG));
+				pPixel(iB) := 255*(255 - color(iA))*pPixel(iB) + (255*color(iA)*color(iB));
    end;
  
 	  function Min(A,B : Integer) return Integer is
