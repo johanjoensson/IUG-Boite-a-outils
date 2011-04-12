@@ -1,8 +1,9 @@
-with  Ada_SDL_Video, Interfaces.C, Gr_Shapes, Aux_Fct, Drawline_Pkg, Ada.Numerics.Elementary_Functions ;
-use   Ada_SDL_Video, Interfaces.C, Ada_SDL_Video.PixelPtrPkg, Gr_Shapes, Aux_Fct, Drawline_Pkg,Ada.Numerics.Elementary_Functions ;
-
+with  Ada_SDL_Video, Interfaces.C, Gr_Shapes, Aux_Fct, Drawline_Pkg ;
+use   Ada_SDL_Video, Interfaces.C, Ada_SDL_Video.PixelPtrPkg, Gr_Shapes, Aux_Fct, Drawline_Pkg ;
 package body Circle_Pkg is
+
  procedure Cercle(animage: ImagePtr; M, D: PointPtr; Color: Pixel) is
+	 -- Draw an empty circle
 	  X : Integer := M.X;
 	  Y : Integer := M.Y;
 	  Rayon : Integer := max(abs(D.X - M.X), abs((D.Y - M.Y)));
@@ -81,10 +82,12 @@ package body Circle_Pkg is
       end loop ;
    end ;
 
+
    procedure CercleRempli(animage: ImagePtr; M, D: PointPtr; Color: Pixel; ClipRect : RectanglePtr := null) is
+	   -- Draw a filled circle
       X : Integer := M.X;
 	  Y : Integer := M.Y;
-	  Rayon : Integer := integer(sqrt(float((D.X - M.X)*(D.X - M.X) + (D.Y - M.Y)*(D.Y - M.Y))));
+	  Rayon : Integer := max(abs(M.x - D.x), abs(M.y - D.y));
 	  Xc: Integer:= 0 ;
       Yc: Integer ;
       P: Integer ;

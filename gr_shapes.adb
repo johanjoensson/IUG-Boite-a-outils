@@ -1,5 +1,5 @@
-with  Ada_SDL_Video, Interfaces.C, Ada.Text_IO, Ada.Integer_Text_IO, Ada.Unchecked_Deallocation,  Drawline_Pkg, Aux_Fct ;
-use   Ada_SDL_Video, Interfaces.C, Ada_SDL_Video.PixelPtrPkg, Ada.Text_IO, Ada.Integer_Text_IO,  Drawline_Pkg, Aux_Fct;
+with  Ada_SDL_Video, Interfaces.C, Ada.Unchecked_Deallocation,  Drawline_Pkg, Aux_Fct ;
+use   Ada_SDL_Video, Interfaces.C, Ada_SDL_Video.PixelPtrPkg, Drawline_Pkg, Aux_Fct;
 
 package body Gr_Shapes is
 
@@ -7,11 +7,10 @@ package body Gr_Shapes is
                        points     : PointPtr;
                        pixelValue : Pixel;
                        clipRect   : RectanglePtr :=null    ) is
+					   -- Draw a polyline
       Cour: PointPtr:= points ;
    begin
       if Cour.Next /= null then
---         DrawLine(image, Cour, Cour, PixelValue,ClipRect) ;
---      else
          while Cour.next /= null loop
             DrawLine(image, Cour, PixelValue,ClipRect);
             Cour := Cour.next;
@@ -25,6 +24,7 @@ package body Gr_Shapes is
                        points     : PointPtr;
                        pixelValue : Pixel;
                        clipRect   : RectanglePtr  :=    null) is
+					   -- Draw a filled polygon
       Ymin,Ymax: Integer ;
       PDeb,PCour, Tmp : PointPtr:= points ;
       TCA,Cour: CotePtr ;
@@ -61,19 +61,11 @@ package body Gr_Shapes is
 		  -- mets a jour le TCA
 		  Table_Des_Cotes_Actifs(TC(y), TCA);
          Cour := TCA;
---		 if ClipRect /= null then
---			 X:= Max(Cour.X_Ymin, ClipRect.topLeft.X) +1 ;
---		 else
 			 X := Cour.X_Ymin;
---		 end if;
          pPtr:= Image.basePixel + ptrdiff_t (Image.width * y + x);
          Paire:= False ;
          while Cour.Next /= null loop
---			 if ClipRect /= null then
---				 XMax := Min(cour.next.X_Ymin, ClipRect.bottomRight.X);
---			 else
 				 XMax := cour.next.X_Ymin;
---			 end if;
             if not Paire then
 				-- Paint the pixels.
                while X <= XMax loop

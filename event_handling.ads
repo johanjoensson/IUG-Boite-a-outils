@@ -3,8 +3,11 @@ use Ada_SDL_Video, Ada_SDL_Video.PixelPtrPkg, Gr_Shapes ;
 
 package Event_Handling is
 
+
+	-- Type for for classifyng Objects
 	type OBJECT is (Canvas,Line, Polyline, Polygone, Circle, FilledCircle, Toolglass);
 
+	-- Type for handling objects
    type Shape;
    type ShapePtr is access all Shape;
 
@@ -16,16 +19,20 @@ package Event_Handling is
    end record;
 
    procedure insert_shape(Shape_Table: in out ShapePtr; Shape: in ShapePtr);
+   -- Procedure to insert a shape in the Scene, according to it's priority.
 
+   -- The scene (name chosen because of a slight misunderstanding)
    type Nirvana is array(OBJECT) of ShapePtr;
 
 	procedure RedrawWindow(	Window		: ImagePtr;
 							TabObj		: Nirvana;
 							Clipper		: RectanglePtr := null);
+	-- Procedure for redrawing part of the window, or the entire window
 
    	procedure RedrawOffscreen(	Window		: ImagePtr;
 							TabObj		: Nirvana;
 							Clipper		: RectanglePtr := null);
+	-- Procedure for redrawing part of the offscreen, or the entire offscreen
 
 	-- Procedure to locate an objetc in the zen
 	procedure findShape(Id: PixelPtr; Scene: Nirvana ; Res : out ShapePtr);
@@ -45,12 +52,17 @@ package Event_Handling is
 	-- Remove any holes in the list of priorities already in use
 	procedure resortPrio(scene: in out nirvana; iR, iG, iB, iA : integer ; MaxPrio : out Pixel);
 
+	-- Returns the type of the object with identifier id
+	-- if no object with identifier id found return canvas
 	function ObjectType(id : PixelPtr; scene : Nirvana) return OBJECT;
 
+	-- Function allowing easy usage of objectType
 	function whatObject(offscreenImage: ImagePtr; x,y : Integer; Zen: nirvana) return OBJECT;
 
+	-- Procedure for drawing the toolglass on the screen
 	procedure DrawToolglass(MyImagePtr : ImagePtr; mousex, mousey : Integer; iR, iG, iB, iA : Integer; Clipper : RectanglePtr := null);
 	
+	-- Procedure for drawing the table of colors on the screen
 	procedure DrawColorTable(MyImagePtr : ImagePtr; mousex, mousey : Integer; iR, iG, iB, iA : Integer; Clipper : RectanglePtr := null);
 
 

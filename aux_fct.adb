@@ -1,5 +1,5 @@
-with Ada_SDL_Video, Interfaces.C, Ada.Unchecked_Deallocation, Gr_Shapes, Ada.Text_Io ;
-use Ada_SDL_Video,  Interfaces.C,Ada_SDL_Video.PixelPtrPkg, Gr_Shapes, Ada.Text_Io ;
+with Ada_SDL_Video, Interfaces.C, Ada.Unchecked_Deallocation, Gr_Shapes ;
+use Ada_SDL_Video,  Interfaces.C,Ada_SDL_Video.PixelPtrPkg, Gr_Shapes ;
 
 package body Aux_Fct is
 	 procedure Liberer is new Ada.Unchecked_Deallocation (Cote,CotePtr);
@@ -9,6 +9,7 @@ package body Aux_Fct is
   procedure PaintPixel(currentImage	:in		ImagePtr;
 						pPixel			:in out	PixelPtr;
 						color			:in		Pixel) is
+						-- "Paint" the pixel
 
 		-- Set the indexes for all the channels
 	   iR	: Integer := currentImage.iR;
@@ -23,6 +24,7 @@ package body Aux_Fct is
    end;
  
 	  function Min(A,B : Integer) return Integer is
+		  -- Return the min of A and B
    begin
       if A <= B then
          return A ;
@@ -32,6 +34,7 @@ package body Aux_Fct is
    end ;
 
    function Max(A,B : Integer) return Integer is
+	   -- return the max of A and B
    begin
       if A <= B then
          return B ;
@@ -42,6 +45,7 @@ package body Aux_Fct is
 
 
    function Check (X,Y,XLMin,YLMin,XLMax,YLMax: Integer) return Boolean is
+	   -- Return true if (x,y) inside te rectangle determined by (XLMin, YLMin),(XLMax, YLMax)
    begin
       if X >= XLMin and X <= XLMax and Y >= YLMin and Y <= YLMax then
          return True ;
@@ -66,6 +70,7 @@ package body Aux_Fct is
    end X_MinMax;
    
    procedure erasePoints(Points : pointPtr) is
+	   -- Liberate memory allocated by points
 	pCurr, pNext, Tmp : PointPtr;
    begin
 	pCurr := Points;
@@ -100,6 +105,7 @@ package body Aux_Fct is
 
    function X_YMin(Point1,Point2: PointPtr) return integer is
       -- Return X_Ymin,si Ymin=Ymax return Xmin
+	   -- Determine Ymin and return the corresponding X
       Aux : integer;
    begin
       if Point1.Y < Point2.Y then
@@ -275,6 +281,7 @@ package body Aux_Fct is
    end Table_Des_Cotes_Actifs ;
 
    procedure Update_Cotes(Cotes : in out CotePtr; Line : in Natural) is
+	   -- Update the sides used in the polygon algorithm
       Cour, Sent        : CotePtr       := Cotes;
       Prec            : CotePtr       := null;
       Suiv            : CotePtr;
@@ -313,6 +320,7 @@ package body Aux_Fct is
       Cotes := TmpCotes;
    end Update_Cotes;
 
+   -- procedure to free the memory occupied by points
    procedure Liberer is new Ada.Unchecked_Deallocation (Point,PointPtr);
 
   -- Ex_DrawLine
@@ -320,6 +328,7 @@ package body Aux_Fct is
   procedure Ex_DrawLine  (anImage                 : Image;
                           xMin, yMin, xMax, yMax  : Integer;
                           color                   : Pixel) is
+						  -- Example of drawline, not used at all
     e           : Integer;
     x_i, y_i    : Integer;
     dx, dy      : Integer;
@@ -358,6 +367,7 @@ package body Aux_Fct is
 
 
   function Inside(Point:PointPtr;ClipRect:RectanglePtr;WBoundary:Boundary) return Boolean is
+	  -- Returns true if the point is inside one of the rectangle's sides (side determined by boundary)
   begin
 
 
@@ -418,7 +428,6 @@ end Inside;
           Senti:PointPtr;
         begin
            if S=null then
---              Put_Line("S Est null");
 			  return;
            end if;
 

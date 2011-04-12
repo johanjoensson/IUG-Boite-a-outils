@@ -7,6 +7,7 @@ package body Drawline_Pkg is
                        points				   : PointPtr;
                        color                   : Pixel ;
                        clipRect                : RectanglePtr:=null ) is
+					   -- Bressenham algorithm for drawing a straight line
       xMin,yMin,xMax,yMax,E,x_i,Y_i,dx,Dy,X0,X1,Y0,y1: Integer;
       pPtr        : PixelPtr;
       Pos         : Boolean ;

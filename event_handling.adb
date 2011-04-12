@@ -281,6 +281,9 @@ package body Event_Handling is
    end CheckShape;
 
    procedure eraseShape(id : PixelPtr; Scene : in out Nirvana; Obj : out ShapePtr; erase : Boolean := true) is
+	   -- Function to either remove or erase a shape from the scene
+	   -- Res = null if no object to remove/delete was found
+
 	   Prec, Curr, Next	: ShapePtr;
    begin
 	   -- Loop through all the object in the scene.
@@ -313,11 +316,11 @@ package body Event_Handling is
    end eraseShape;
 
    procedure RemoveShape(offscreenImage: ImagePtr; x,y : Integer; Zen: in out nirvana; res : out ShapePtr; erase : Boolean := True) is
-	   pPtr	: PixelPtr;
+	   -- Function to simplify the calling of eraseShape
+	  	   pPtr	: PixelPtr;
    begin
 	   pPtr:= offscreenImage.basePixel + ptrdiff_t (offscreenImage.width * y + x);
 	   eraseShape(pPtr, Zen, Res, erase);
--- 	   findShape(pPtr, Zen, Res);
    end RemoveShape; 
 
    procedure increasePrio (prio: in out pixel; iR, iG, iB, iA : Integer) is
@@ -333,13 +336,15 @@ package body Event_Handling is
 				   prio(iG) := 0;
 				   prio(iB) := prio(iB) + 1; 
 			   else
-				   put_line("listan är full");
+				   put_line("The Scene is full, God knows what happens if you enter another object");
 			   end if;
 		   end if;
 	   end if;
    end increasePrio;
 
    procedure resortPrio(scene: in out nirvana; iR, iG, iB, iA : integer ; MaxPrio : out Pixel) is
+	   -- Resets all priorities eliminating all possible "holes" amongst the identifiers
+	   -- Returns the new maxPrio (one higher than the highest priority in the Scene)
 	   currLine, currPolyline, currPolygone, CurrCircle, CurrCircleF	: ShapePtr;
 	   lowestPrio, linePrio, polylinePrio, polygonePrio, CirclePrio, CircleFPrio	: Pixel;
 	   nullPrio : Pixel := (255, 255, 255, 255);
@@ -413,7 +418,9 @@ package body Event_Handling is
 			   CircleFPrio := CurrCircleF.Identifier;
 		   end if;
 
+		   -- Find the lowest priority 
 		   lowestPrio := lowestPriority(LinePrio, polylinePrio, polygonePrio, CirclePrio, CircleFPrio, iR, iG, iB, iA);
+		   -- Treat the lowest priority (update the identifier) object
 		   if LinePrio(iA) /= 0 and then LinePrio = lowestPrio then
 			   CurrLine.Identifier := maxPrio;
 			   increasePrio(maxPrio, iR, iG, iB, iA);
@@ -435,12 +442,13 @@ package body Event_Handling is
 			   increasePrio(maxPrio, iR, iG, iB, iA);
 			   currCircleF := currCircleF.next;
 		   end if;
-		   put_line("Sorterar, MaxPrio =" & integer'image(integer(maxPrio(iR))));
 	   end loop;
-		   put_line("Sortering klar, MaxPrio =" & integer'image(integer(maxPrio(iR))));
    end resortPrio;
 
 function ObjectType(id : PixelPtr; scene : Nirvana) return OBJECT is
+	-- Returns the Object type of a shape, using it's identifier
+	-- Returns Canvas if no matching objectwas found
+
  Curr: ShapePtr;
 begin
 	   -- Loop through all the object in the scene.
@@ -459,6 +467,7 @@ begin
 end ObjectType;
 
 function whatObject(offscreenImage: ImagePtr; x,y : Integer; Zen: nirvana) return OBJECT is
+	-- Simple procedure to get an objects identifier and the call ObjectType
 	pPtr : PixelPtr;
 	res : OBJECT;
 begin
@@ -469,7 +478,8 @@ end whatObject;
 
 
 procedure DrawToolglass(MyImagePtr : ImagePtr; mousex, mousey : Integer; iR, iG, iB, iA : Integer; Clipper : RectanglePtr := null)is
-	Tool1, Tool2, Tool3, Tool4,Tool5, Tool6, Tool7, Tool8,Tool9, Tool10, Tool11, Tool12,Tool13, Tool14, Tool15, Tool16,Tool17, Tool18, Tool19, Tool20,Tool21, Tool22, Tool23, Tool24,Tool25, Tool26, Tool27, Tool28 : PointPtr := new point;
+	-- Procedure to draw the toolglass on the screen
+	Tool1, Tool2, Tool3, Tool4,Tool5 : PointPtr := new point;
 	width : Integer := MyImagePtr.width;
 	height : Integer := MyImagePtr.height;
 	Black, Green, Red, Blue	: Pixel := (0,0,0,0);
@@ -484,71 +494,100 @@ begin
 	Green(iG)	:= 255;
 	Blue(iB)	:= 255;
 
-            Tool5.all:= (Mousex,Min(Height,Mousey),null) ;
+	-- Draw the big rectangle surrounding the toolglass
+			Tool5.all:= (Mousex,Min(Height,Mousey),null) ;
             Tool4.all:= (Mousex,Min(Height,Mousey+160),Tool5) ;
             Tool3.all:= (Mousex+80,Min(Height,Mousey+160),Tool4) ;
             Tool2.all:= (Mousex+80,Min(Height,Mousey),Tool3) ;
             Tool1.all:= (Mousex,Min(Height,Mousey),Tool2) ;
             Polyline(MyImagePtr,Tool1,black, Clipper) ;
+
+			-- Draw the Drawline button
             DrawLine(MyImagePtr,new point'(Mousex+5,Min(Height,Mousey+35), new point'(Mousex+35,Min(Height,Mousey+5), null)),black, Clipper) ;
-            Tool6.all:= (Mousex+45,Min(Height,Mousey+18),null) ;
-            Tool7.all:= (Mousex+53,Min(Height,Mousey+10),Tool6) ;
-            Tool8.all:= (Mousex+75,Min(Height,Mousey+35),Tool7) ;
-            Polyline(MyImagePtr,Tool8,Black, Clipper) ;
-            if Mousey+75 <= Height then
-               Cercle(MyImagePtr, new point'(Mousex+20,Mousey+60, null), new point'(mousex + 35, mousey + 60, null),black) ;
+
+			-- Draw the polyline button
+            Tool3.all:= (Mousex+45,Min(Height,Mousey+18),null) ;
+            Tool2.all:= (Mousex+53,Min(Height,Mousey+10),Tool3) ;
+            Tool1.all:= (Mousex+75,Min(Height,Mousey+35),Tool2) ;
+            Polyline(MyImagePtr,Tool1 ,Black, Clipper) ;
+            
+			-- Draw the circle button
+			if Mousey+75 <= Height then
+				Tool1.all := (Mousex+20,Mousey+60, null);
+				Tool2.all := (mousex + 35, mousey + 60, null);
+               Cercle(MyImagePtr, Tool1, Tool2, black) ;
             end if ;
+
+			-- Draw the filled circle button
             if Mousey+115 <= Height then
-               CercleRempli(MyImagePtr,new point'(Mousex+20,Mousey+100, null), new point'(mousex + 35, mousey + 100, null),black, Clipper) ;
+				Tool1.all := (Mousex+20,Mousey+100, null);
+				Tool2.all := (mousex + 35, mousey + 100, null);
+               CercleRempli(MyImagePtr, Tool1, Tool2, black, Clipper) ;
             end if ;
-            Tool9.all:= (Mousex+45,Min(Height,Mousey+50),null) ;
-            Tool10.all:= (Mousex+75,Min(Height,Mousey+50),Tool9) ;
-            Tool11.all:= (Mousex+75,Min(Height,Mousey+70),Tool10) ;
-            Tool12.all:= (Mousex+45,Min(Height,Mousey+70),Tool11) ;
-            Polygone(MyImagePtr,Tool12,black, Clipper) ;
-            Drawline(MyImagePtr,new point'(Mousex+60,Min(Height,Mousey+80),new point'(Mousex+60,Min(Height,Mousey+120), null)),black, Clipper) ;
-            Drawline(MyImagePtr,new point'(Mousex+40,Min(Height,Mousey+100), new point'(Mousex+80,Min(Height,Mousey+100), null)),black, Clipper) ;
-            Tool13.all:= (Mousex+43,Min(Height,Mousey+83),null) ;
-            Tool14.all:= (Mousex+57,Min(Height,Mousey+83),Tool13) ;
-            Tool15.all:= (Mousex+57,Min(Height,Mousey+97),Tool14) ;
-            Tool16.all:= (Mousex+43,Min(Height,Mousey+97),Tool15) ;
-            Polygone(MyImagePtr,Tool16,Red, Clipper) ;
-            Tool17.all:= (Mousex+63,Min(Height,Mousey+83),null) ;
-            Tool18.all:= (Mousex+77,Min(Height,Mousey+83),Tool17) ;
-            Tool19.all:= (Mousex+77,Min(Height,Mousey+97),Tool18) ;
-            Tool20.all:= (Mousex+63,Min(Height,Mousey+97),Tool19) ;
-            Polygone(MyImagePtr,Tool20,green, Clipper) ;
-            Tool21.all:= (Mousex+63,Min(Height,Mousey+103),null) ;
-            Tool22.all:= (Mousex+77,Min(Height,Mousey+103),Tool21) ;
-            Tool23.all:= (Mousex+77,Min(Height,Mousey+117),Tool22) ;
-            Tool24.all:= (Mousex+63,Min(Height,Mousey+117),Tool23) ;
-            Polygone(MyImagePtr,Tool24,black, Clipper) ;
-            Tool25.all:= (Mousex+43,Min(Height,Mousey+103),null) ;
-            Tool26.all:= (Mousex+57,Min(Height,Mousey+103),Tool25) ;
-            Tool27.all:= (Mousex+57,Min(Height,Mousey+117),Tool26) ;
-            Tool28.all:= (Mousex+43,Min(Height,Mousey+117),Tool27) ;
-            Polygone(MyImagePtr,Tool28,blue, Clipper) ;
+
+			-- Draw the polygon button
+            Tool4.all:= (Mousex+45,Min(Height,Mousey+50),null) ;
+            Tool3.all:= (Mousex+75,Min(Height,Mousey+50),Tool4) ;
+            Tool2.all:= (Mousex+75,Min(Height,Mousey+70),Tool3) ;
+            Tool1.all:= (Mousex+45,Min(Height,Mousey+70),Tool2) ;
+            Polygone(MyImagePtr,Tool1, black, Clipper) ;
+
+			-- Draw the Table of colors button
+			Tool2.all := (Mousex+60,Min(Height,Mousey+120), null);
+			Tool1.all := (Mousex+60,Min(Height,Mousey+80), Tool2);
+            Drawline(MyImagePtr, Tool1, black, Clipper) ;
 			
+			Tool2.all := (Mousex+80,Min(Height,Mousey+100), null);
+			Tool1.all := (Mousex+40,Min(Height,Mousey+100), Tool2);
+            Drawline(MyImagePtr, Tool1, black, Clipper) ;
+
+			-- Draw the small, colored squares
+            Tool4.all:= (Mousex+43,Min(Height,Mousey+83),null) ;
+            Tool3.all:= (Mousex+57,Min(Height,Mousey+83),Tool4) ;
+            Tool2.all:= (Mousex+57,Min(Height,Mousey+97),Tool3) ;
+            Tool1.all:= (Mousex+43,Min(Height,Mousey+97),Tool2) ;
+            Polygone(MyImagePtr,Tool1,Red, Clipper) ;
+            Tool4.all:= (Mousex+63,Min(Height,Mousey+83),null) ;
+            Tool3.all:= (Mousex+77,Min(Height,Mousey+83),Tool4) ;
+            Tool2.all:= (Mousex+77,Min(Height,Mousey+97),Tool3) ;
+            Tool1.all:= (Mousex+63,Min(Height,Mousey+97),Tool2) ;
+            Polygone(MyImagePtr,Tool1,green, Clipper) ;
+            Tool4.all:= (Mousex+63,Min(Height,Mousey+103),null) ;
+            Tool3.all:= (Mousex+77,Min(Height,Mousey+103),Tool4) ;
+            Tool2.all:= (Mousex+77,Min(Height,Mousey+117),Tool3) ;
+            Tool1.all:= (Mousex+63,Min(Height,Mousey+117),Tool2) ;
+            Polygone(MyImagePtr,Tool1,black, Clipper) ;
+            Tool4.all:= (Mousex+43,Min(Height,Mousey+103),null) ;
+            Tool3.all:= (Mousex+57,Min(Height,Mousey+103),Tool4) ;
+            Tool2.all:= (Mousex+57,Min(Height,Mousey+117),Tool3) ;
+            Tool1.all:= (Mousex+43,Min(Height,Mousey+117),Tool2) ;
+            Polygone(MyImagePtr,Tool1,blue, Clipper) ;
+			
+
+			-- Draw the erase button
 			Tool2.all := (Mousex+35,Min(Height,Mousey+155), null);
 			Tool1.all := (Mousex+5,Min(Height,Mousey+125), Tool2);
-            Drawline(MyImagePtr,Tool1,black, Clipper) ;
+            Drawline(MyImagePtr,Tool1, Red, Clipper) ;
 			
 			Tool2.all := (Mousex+35,Min(Height,Mousey+125), null);
 			Tool1.all := (Mousex+5,Min(Height,Mousey+155), Tool2);
-            Drawline(MyImagePtr,Tool1,black, Clipper) ;
+            Drawline(MyImagePtr,Tool1, Red, Clipper) ;
 
+
+			-- Draw the increase priority button
 			Tool2.all := (Mousex+60,Min(Height,Mousey+155), null);
 			Tool1.all := (Mousex+60,Min(Height,Mousey+125), Tool2);
-            Drawline(MyImagePtr, Tool1, black, Clipper) ;
+            Drawline(MyImagePtr, Tool1, Black, Clipper) ;
 
 			Tool2.all := (Mousex+50,Min(Height,Mousey+135), null);
 			Tool1.all := (Mousex+60,Min(Height,Mousey+125), Tool2);
-            Drawline(MyImagePtr, Tool1,black, clipper) ;
+            Drawline(MyImagePtr, Tool1, black, clipper) ;
 
             Tool2.all := (Mousex+70,Min(Height,Mousey+135), null);
 			Tool1.all := (Mousex+60,Min(Height,Mousey+125), Tool2);
 			Drawline(MyImagePtr, Tool1, black, Clipper) ;
 
+			-- Draw all the separating lines between the buttons
 			Tool2.all := (Mousex+40,Min(Height,Mousey+160), null);
 			Tool1.all := (Mousex+40,Min(Height,Mousey), Tool2);
 			DrawLine(MyImagePtr, Tool1, black, Clipper) ;
@@ -563,25 +602,27 @@ begin
 
             Tool2.all := (Mousex+80,Min(Height,Mousey+120), null);
 			Tool1.all := (Mousex,Min(Height,Mousey+120), Tool2);
-		   	DrawLine(MyImagePtr, Tool1,black, Clipper) ;
+		   	DrawLine(MyImagePtr, Tool1, black, Clipper) ;
 
 			Tool2.next := Tool3;
+			Tool4.next := Tool5;
 
 			erasePoints(Tool1);
-			erasePoints(Tool8);
-			erasePoints(Tool12);
-			erasePoints(Tool16);
-			erasePoints(Tool20);
-			erasePoints(Tool24);
-			erasePoints(Tool28);
-
+-- 			erasePoints(Tool8);
+-- 			erasePoints(Tool12);
+-- 			erasePoints(Tool16);
+-- 			erasePoints(Tool20);
+-- 			erasePoints(Tool24);
+-- 			erasePoints(Tool28);
+-- 
 end DrawToolglass;
 
 procedure DrawColorTable(MyImagePtr : ImagePtr; mousex, mousey : Integer; iR, iG, iB, iA : Integer; Clipper : RectanglePtr := null) is
-	Tabcolor1, TabColor2, TabColor3, TabColor4, TabColor5, TabColor6, TabColor7,Tabcolor8, TabColor9, TabColor10, TabColor11, TabColor12, TabColor13, TabColor14,Tabcolor15, TabColor16, TabColor17, TabColor18, TabColor19, TabColor20, TabColor21 : PointPtr := new point;
+	-- Procdure to draw the table of colors on the screen
+	Tabcolor1, TabColor2, TabColor3, TabColor4, TabColor5 : PointPtr := new point;
 	height : Integer := MyImagePtr.height;
 	width : Integer := MyImagePtr.width;
-	Red, Green, Blue, Black : Pixel := (0, 0, 0, 0);
+	Red, Green, Blue, Black, Yellow, White : Pixel := (0, 0, 0, 0);
 
 
 begin
@@ -589,52 +630,75 @@ begin
 		Red(iA) := 128;
 		Green(iA) := 128;
 		Blue(iA) := 128;
+		Yellow(iA)	:= 128;
+		White(iA)	:= 128;
 		Black(iA) := 128;
 	end if;
 	red(iR) := 255;
+	Yellow(iR) := 255;
+	White(iR) := 255;
 	Green(iG) := 255;
+	Yellow(iG) := 255;
+	White(iG) := 255;
 	Blue(iB) := 255;
-			Tabcolor1.all:= (Mousex,Min(Height,Mousey),null) ;
-            Tabcolor2.all:= (Mousex+80,Min(Height,Mousey),Tabcolor1) ;
-            Tabcolor3.all:= (Mousex+80,Min(Height,Mousey+120),Tabcolor2) ;
-            Tabcolor4.all:= (Mousex,Min(Height,Mousey+120),Tabcolor3) ;
-            Tabcolor5.all:= (Mousex,Min(Height,Mousey),Tabcolor4) ;
-            Polyline(MyImagePtr,Tabcolor5,black, Clipper) ;
-            Tabcolor6.all:= (Mousex+5,Min(Height,Mousey+5),null) ;
-            Tabcolor7.all:= (Mousex+35,Min(Height,Mousey+5),Tabcolor6) ;
-            Tabcolor8.all:= (Mousex+35,Min(Height,Mousey+35),Tabcolor7) ;
-            Tabcolor9.all:= (Mousex+5,Min(Height,Mousey+35),Tabcolor8) ;
-            Polygone(MyImagePtr,Tabcolor9,Red, Clipper) ;
-            Tabcolor10.all:= (Mousex+45,Min(Height,Mousey+5),null) ;
-            Tabcolor11.all:= (Mousex+75,Min(Height,Mousey+5),Tabcolor10) ;
-            Tabcolor12.all:= (Mousex+75,Min(Height,Mousey+35),Tabcolor11) ;
-            Tabcolor13.all:= (Mousex+45,Min(Height,Mousey+35),Tabcolor12) ;
-            Polygone(MyImagePtr,Tabcolor13,green, Clipper) ;
-            Tabcolor14.all:= (Mousex+45,Min(Height,Mousey+45),null) ;
-            Tabcolor15.all:= (Mousex+75,Min(Height,Mousey+45),Tabcolor14) ;
-            Tabcolor16.all:= (Mousex+75,Min(Height,Mousey+75),Tabcolor15) ;
-            Tabcolor17.all:= (Mousex+45,Min(Height,Mousey+75),Tabcolor16) ;
-            Polygone(MyImagePtr,Tabcolor17,black, Clipper) ;
-            Tabcolor18.all:= (Mousex+5,Min(Height,Mousey+45),null) ;
-            Tabcolor19.all:= (Mousex+35,Min(Height,Mousey+45),Tabcolor18) ;
-            Tabcolor20.all:= (Mousex+35,Min(Height,Mousey+75),Tabcolor19) ;
-            Tabcolor21.all:= (Mousex+5,Min(Height,Mousey+75),Tabcolor20) ;
-            Polygone(MyImagePtr,Tabcolor21,blue, Clipper) ;
+	White(iB) := 255;
+
+			-- Draw the Rectangle containing the table of colors
+			Tabcolor5.all:= (Mousex,Min(Height,Mousey),null) ;
+            Tabcolor4.all:= (Mousex+80,Min(Height,Mousey),Tabcolor5) ;
+            Tabcolor3.all:= (Mousex+80,Min(Height,Mousey+120),Tabcolor4) ;
+            Tabcolor2.all:= (Mousex,Min(Height,Mousey+120),Tabcolor3) ;
+            Tabcolor1.all:= (Mousex,Min(Height,Mousey),Tabcolor2) ;
+            Polyline(MyImagePtr,Tabcolor1,black, Clipper) ;
+
+			-- Draw the red button
+            Tabcolor4.all:= (Mousex+5,Min(Height,Mousey+5),null) ;
+            Tabcolor3.all:= (Mousex+35,Min(Height,Mousey+5),Tabcolor4) ;
+            Tabcolor2.all:= (Mousex+35,Min(Height,Mousey+35),Tabcolor3) ;
+            Tabcolor1.all:= (Mousex+5,Min(Height,Mousey+35),Tabcolor2) ;
+            Polygone(MyImagePtr,Tabcolor1,Red, Clipper) ;
+
+			-- Draw the green button
+            Tabcolor4.all:= (Mousex+45,Min(Height,Mousey+5),null) ;
+            Tabcolor3.all:= (Mousex+75,Min(Height,Mousey+5),Tabcolor4) ;
+            Tabcolor2.all:= (Mousex+75,Min(Height,Mousey+35),Tabcolor3) ;
+            Tabcolor1.all:= (Mousex+45,Min(Height,Mousey+35),Tabcolor2) ;
+            Polygone(MyImagePtr,Tabcolor1,green, Clipper) ;
+
+			-- Draw the black button
+            Tabcolor4.all:= (Mousex+45,Min(Height,Mousey+45),null) ;
+            Tabcolor3.all:= (Mousex+75,Min(Height,Mousey+45),Tabcolor4) ;
+            Tabcolor2.all:= (Mousex+75,Min(Height,Mousey+75),Tabcolor3) ;
+            Tabcolor1.all:= (Mousex+45,Min(Height,Mousey+75),Tabcolor2) ;
+            Polygone(MyImagePtr,Tabcolor1,black, Clipper) ;
+
+			-- Draw the Blue button
+            Tabcolor4.all:= (Mousex+5,Min(Height,Mousey+45),null) ;
+            Tabcolor3.all:= (Mousex+35,Min(Height,Mousey+45),Tabcolor4) ;
+            Tabcolor2.all:= (Mousex+35,Min(Height,Mousey+75),Tabcolor3) ;
+            Tabcolor1.all:= (Mousex+5,Min(Height,Mousey+75),Tabcolor2) ;
+            Polygone(MyImagePtr,Tabcolor1,blue, Clipper) ;
+
+			-- Draw the Yellow button
+			Tabcolor4.all:= (Mousex+5,Min(Height,Mousey+85),null) ;
+            Tabcolor3.all:= (Mousex+35,Min(Height,Mousey+85),Tabcolor4) ;
+            Tabcolor2.all:= (Mousex+35,Min(Height,Mousey+115),Tabcolor3) ;
+            Tabcolor1.all:= (Mousex+5,Min(Height,Mousey+115),Tabcolor2) ;
+            Polygone(MyImagePtr,Tabcolor1, Yellow, Clipper) ;
+
+			-- Draw the white button
+			Tabcolor4.all:= (Mousex+45,Min(Height,Mousey+85),null) ;
+            Tabcolor3.all:= (Mousex+75,Min(Height,Mousey+85),Tabcolor4) ;
+            Tabcolor2.all:= (Mousex+75,Min(Height,Mousey+115),Tabcolor3) ;
+            Tabcolor1.all:= (Mousex+45,Min(Height,Mousey+115),Tabcolor2) ;
+            Polygone(MyImagePtr,Tabcolor1, White, Clipper) ;
 
 
-			TabColor2.all := (Mousex+75,Min(Height,Mousey+100), null);
-			TabColor1.all := (Mousex+45,Min(Height,Mousey+100), TabColor2);
-            Drawline(MyImagePtr, TabColor1, black, Clipper) ;
 
-			TabColor2.all := (Mousex+75,Min(Height,Mousey+100), null);
-			TabColor1.all := (Mousex+65,Min(Height,Mousey+90), TabColor2);
-		   	Drawline(MyImagePtr, TabColor1,black, Clipper) ;
 
-			TabColor2.all := (Mousex+75,Min(Height,Mousey+100), null);
-			TabColor1.all := (Mousex+65,Min(Height,Mousey+110), TabColor2);
-			Drawline(MyImagePtr, TabColor1, black, Clipper) ;
+			-- Draw the separating lines between all the buttons
 
-            TabColor2.all := (Mousex+40,Min(Height,Mousey+120), null);
+			TabColor2.all := (Mousex+40,Min(Height,Mousey+120), null);
 			TabColor1.all := (Mousex+40,Min(Height,Mousey), TabColor2);
 			Drawline(MyImagePtr, TabColor1, black, Clipper) ;
 
@@ -647,14 +711,10 @@ begin
 			TabColor1.all := (Mousex,Min(Height,Mousey+80), TabColor2);
             Drawline(MyImagePtr, TabColor1, black, Clipper) ;
 
-			TabColor2.next := TabColor1;
-			TabColor1.next := null;
+			TabColor2.next := TabColor3;
+			TabColor4.next := TabColor5;
 
-			erasePoints(Tabcolor5);
-			erasePoints(Tabcolor9);
-			erasePoints(Tabcolor13);
-			erasePoints(Tabcolor17);
-			erasePoints(Tabcolor21);
+			erasePoints(Tabcolor1);
 end DrawColorTable;
 
 
